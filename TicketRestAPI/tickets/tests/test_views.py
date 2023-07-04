@@ -41,3 +41,31 @@ class TicketThreadViewSetTestCase(APITestCase):
         # Check that the response status code is 405 Method Not Allowed
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         # Additional assertions if necessary
+
+    def test_retrieving_list_of_ticket_threads(self):
+        response = self.client.get(reverse('ticketthread-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+    def test_retrieving_single_ticket_thread(self):
+        response = self.client.get(reverse('ticketthread-detail', kwargs={'pk': self.thread1.pk}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.thread1.id)
+
+    def test_creating_new_ticket_thread(self):
+        data = {'thread_code': '123456789', 'status': 'A'}
+        response = self.client.post(reverse('ticketthread-list'), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['thread_code'], '123456789')
+        self.assertEqual(response.data['status'], 'A')
+
+    def test_updating_ticket_thread(self):
+        data = {'thread_code': '987654321', 'status': 'F'}
+        response = self.client.put(reverse('ticketthread-detail', kwargs={'pk': self.thread1.pk}), data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['thread_code'], '987654321')
+        self.assertEqual(response.data['status'], 'F')
+
+    def test_deleting_ticket_thread(self):
+        response = self.client.delete(reverse('ticketthread-detail', kwargs={'pk': self.thread1.pk}))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
