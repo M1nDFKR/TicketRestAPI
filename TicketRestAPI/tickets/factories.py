@@ -1,7 +1,7 @@
 # myapp/factories.py
 import factory
 from faker import Faker
-from .models import Ticket, TicketThread
+from .models import Ticket, TicketThread, Comment, User
 
 fake = Faker()
 
@@ -19,3 +19,11 @@ class TicketFactory(factory.django.DjangoModelFactory):
     code = factory.Sequence(lambda n: f'Ticket{n}')
     status = 'A'
     body = factory.LazyAttribute(lambda _: fake.text())
+    
+class CommentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Comment
+    
+    ticket = factory.SubFactory(TicketFactory)
+    user = factory.SubFactory(User)
+    text = "Exemplo de texto do comentário"   

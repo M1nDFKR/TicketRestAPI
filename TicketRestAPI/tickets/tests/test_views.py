@@ -1,11 +1,12 @@
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate
 from rest_framework import status
 from django.urls import reverse
-
+from django.contrib.auth.models import User
+from unittest.mock import patch
 import django
 django.setup()
 
-from .factories import TicketThreadFactory
+from tickets.factories import TicketThreadFactory
 
 class TicketThreadViewSetTestCase(APITestCase):
     def setUp(self):
@@ -15,7 +16,15 @@ class TicketThreadViewSetTestCase(APITestCase):
         # Set up the URL for the fetch_emails action
         self.url = reverse('ticketthread-fetch-emails')
 
-    def test_fetch_emails(self):
+        # Create a test user and set up authentication
+        self.user = User.objects.create_user(username='testuser', password='testpass')
+        self.factory = APIRequestFactory()
+        self.client.force_authenticate(user=self.user)
+
+    @patch('tickets.views.fetch_and_process_emails')
+    def test_fetch_emails(self, mock_fetch_and_process_emails):
+        # Configure the mock to return a successful response
+        mock_fetch_and_process_emails.return_value = None
         # Send a POST request to the fetch_emails endpoint
         response = self.client.post(self.url)
         # Check the response status code
