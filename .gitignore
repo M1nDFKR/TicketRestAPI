@@ -1,0 +1,52 @@
+# Ignore compiled Python files
+*.pyc
+__pycache__/
+
+# Ignore the virtual environment
+venv/
+env/
+
+# Ignore local development settings
+settings_local.py
+
+# Ignore database files
+*.sqlite3
+*.db
+
+# Ignore static files
+/static/
+
+# Ignore media uploads
+/media/
+
+# Ignore log files
+*.log
+
+# Ignore generated documentation
+/docs/_build/
+
+# Ignore package build directories
+*.egg-info/
+dist/
+build/
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+*.pydevproject
+*.pyc
+
+# Ignore sensitive or personal information
+secret_key.txt
+*.env
+
+# Ignore system-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore backup files
+*.bak
+*.swp
+*~
+
+# Ignore any other files or directories that are not necessary for version control
