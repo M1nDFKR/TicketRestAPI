@@ -49,12 +49,13 @@ def extract_code_from_subject(subject):
     return match.group(1) if match else None
 
 def create_or_update_ticket(subject, body, code):
-    # Create or update ticket
+    thread, _ = TicketThread.objects.get_or_create(thread_code=code)
     ticket, created = Ticket.objects.get_or_create(code=code,
-                                                   defaults={'title': subject, 'body': body})
+                                                   defaults={'title': subject, 'body': body, 'thread': thread})
     if not created:
         ticket.title = subject
         ticket.body = body
+        ticket.thread = thread
         ticket.save()
     return ticket
 
@@ -63,15 +64,18 @@ def update_ticket_and_thread_status(ticket_instance, subject):
     if "fechado" in subject or "resolvido" in subject:
         ticket_instance.status = "closed"
         ticket_instance.save()
-        thread = TicketThread.objects.get(ticket=ticket_instance)
+        thread = TicketThread.objects.get(tickets=ticket_instance)
         thread.status = "closed"
         thread.save()
-
+        
 def fetch_and_process_emails():
     emails = get_emails()
     for email_data in emails:
         title = email_data['subject']
         body = email_data['body']
         code = extract_code_from_subject(title)
+        if code is None:
+            print(f"Could not extract code from email with title: {title}")
+            continue
         ticket_instance = create_or_update_ticket(title, body, code)
         update_ticket_and_thread_status(ticket_instance, title)
