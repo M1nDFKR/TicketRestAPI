@@ -1,39 +1,47 @@
 from unittest import mock
+from unittest.mock import patch, MagicMock
 from django.test import TestCase
-from tickets.utils import fetch_and_process_emails, create_or_update_ticket
+from django.conf import settings
+from tickets.utils import get_emails
 
 
-class TestUtils(TestCase):
-    def setUp(self):
-        self.emails = [
-            {'subject': '[ABC123] Ticket details',
-                'body': 'Hello, this is a test'},
-            {'subject': '[XYZ456] Another ticket', 'body': 'Another test'},
-        ]
-        self.mock_imapclient = mock.MagicMock()
-        self.mock_imapclient.IMAPClient.return_value = self.mock_imapclient
-        self.mock_imapclient.search.return_value = [1, 2]
-        self.mock_imapclient.fetch.return_value = {
-            1: {b'BODY[]': self.emails[0]['body'].encode()},
-            2: {b'BODY[]': self.emails[1]['body'].encode()},
+class GetEmailsTest(TestCase):
+    @patch('imapclient.IMAPClient')
+    def test_get_emails(self, mock_imapclient):
+        # Crie uma instância mock do cliente IMAP
+        mock_client = MagicMock()
+        mock_imapclient.return_value = mock_client
+
+        # Configure o comportamento de 'login' para que ele não falhe
+        mock_client.login.return_value = None
+
+        # Configure o comportamento de 'select_folder'
+        mock_client.select_folder.return_value = None
+
+        # Configure o comportamento de 'search'
+        mock_client.search.return_value = ['123']
+
+        # Crie um exemplo de resposta para 'fetch'
+        fetch_response = {
+            '123': {
+                b'BODY[]': b"Subject: Test\r\n\r\nThis is a test email."
+            }
         }
+        mock_client.fetch.return_value = fetch_response
 
-    def test_fetch_and_process_emails(self):
-        mock_imapclient = mock.MagicMock()
+        # Agora, chame a função get_emails
+        emails = get_emails()
 
-        with mock.patch('tickets.utils.imapclient.IMAPClient', return_value=mock_imapclient):
-            fetch_and_process_emails()
+        # Faça as verificações
+        self.assertEqual(len(emails), 1)
+        self.assertEqual(emails[0]['subject'], 'Test')
+        self.assertEqual(emails[0]['body'], 'This is a test email.')
 
-        assert mock_imapclient.login.called
-        assert mock_imapclient.select_folder.called
-        assert mock_imapclient.search.called
-        assert mock_imapclient.fetch.called
-
-    def test_create_or_update_ticket(self):
-        subject = "[ABC123] Ticket details"
-        body = "Hello, this is a test"
-        code = "ABC123"
-        ticket_instance = create_or_update_ticket(subject, body, code)
-        self.assertEqual(ticket_instance.title, subject)
-        self.assertEqual(ticket_instance.body, body)
-        self.assertEqual(ticket_instance.code, code)
+        # Verifique se as funções foram chamadas com os parâmetros corretos
+        mock_imapclient.assert_called_once_with(settings.MAIL_SERVER)
+        mock_client.login.assert_called_once_with(
+            settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+        mock_client.select_folder.assert_called_once_with('INBOX')
+        mock_client.search.assert_called_once_with(
+            [u'FROM', settings.MAIL_USERNAME])
+        mock_client.fetch.assert_called_once_with(['123'], ['BODY[]'])
