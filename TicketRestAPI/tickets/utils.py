@@ -48,15 +48,30 @@ def extract_code_from_subject(subject):
     match = re.search(r'\[(.*?)\]', subject)
     return match.group(1) if match else None
 
-def create_or_update_ticket(subject, body, code):
+
+def create_or_update_ticket(subject, body, code, thread_id=None):
     # Create or update ticket
-    ticket, created = Ticket.objects.get_or_create(code=code,
-                                                   defaults={'title': subject, 'body': body})
-    if not created:
-        ticket.title = subject
-        ticket.body = body
-        ticket.save()
-    return ticket
+    if code:
+        defaults = {'title': subject, 'body': body}
+        if thread_id is not None:
+            defaults['thread_id'] = thread_id
+
+        try:
+            ticket = Ticket.objects.get(code=code)
+            ticket.title = subject
+            ticket.body = body
+            if thread_id is not None:
+                ticket.thread_id = thread_id
+            ticket.save()
+        except Ticket.DoesNotExist:
+            ticket = Ticket.objects.create(code=code, **defaults)
+            if thread_id is not None:
+                ticket.thread_id = thread_id
+                ticket.save()
+
+        return ticket
+    else:
+        return None
 
 def update_ticket_and_thread_status(ticket_instance, subject):
     # Update status if subject contains "fechado/resolvido"
