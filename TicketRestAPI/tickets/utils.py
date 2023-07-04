@@ -67,7 +67,7 @@ def update_ticket_and_thread_status(ticket_instance, subject):
         thread = TicketThread.objects.get(tickets=ticket_instance)
         thread.status = "closed"
         thread.save()
-        
+              
 def fetch_and_process_emails():
     emails = get_emails()
     for email_data in emails:
