@@ -1,44 +1,47 @@
-from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate
-from rest_framework import status
-from django.urls import reverse
-from django.contrib.auth.models import User
-from unittest.mock import patch
-import django
-django.setup()
+from unittest import mock
+from unittest.mock import patch, MagicMock
+from django.test import TestCase
+from django.conf import settings
+from tickets.utils import get_emails
 
-from tickets.factories import TicketThreadFactory
 
-class TicketThreadViewSetTestCase(APITestCase):
-    def setUp(self):
-        # Create some TicketThread instances for testing
-        self.thread1 = TicketThreadFactory()
-        self.thread2 = TicketThreadFactory()
-        # Set up the URL for the fetch_emails action
-        self.url = reverse('ticketthread-fetch-emails')
+class GetEmailsTest(TestCase):
+    @patch('imapclient.IMAPClient')
+    def test_get_emails(self, mock_imapclient):
+        # Crie uma instância mock do cliente IMAP
+        mock_client = MagicMock()
+        mock_imapclient.return_value = mock_client
 
-        # Create a test user and set up authentication
-        self.user = User.objects.create_user(username='testuser', password='testpass')
-        self.factory = APIRequestFactory()
-        self.client.force_authenticate(user=self.user)
+        # Configure o comportamento de 'login' para que ele não falhe
+        mock_client.login.return_value = None
 
-    @patch('tickets.views.fetch_and_process_emails')
-    def test_fetch_emails(self, mock_fetch_and_process_emails):
-        # Configure the mock to return a successful response
-        mock_fetch_and_process_emails.return_value = None
-        # Send a POST request to the fetch_emails endpoint
-        response = self.client.post(self.url)
-        # Check the response status code
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Check the response data
-        self.assertEqual(
-            response.data, {'status': 'Emails fetched and processed successfully'}
-        )
-        # Additional assertions if necessary
+        # Configure o comportamento de 'select_folder'
+        mock_client.select_folder.return_value = None
 
-    def test_fetch_emails_with_invalid_method(self):
-        # Send a GET request to the fetch_emails endpoint
-        response = self.client.get(self.url)
-        # Check that the response status code is 405 Method Not Allowed
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        # Additional assertions if necessary
+        # Configure o comportamento de 'search'
+        mock_client.search.return_value = ['123']
 
+        # Crie um exemplo de resposta para 'fetch'
+        fetch_response = {
+            '123': {
+                b'BODY[]': b"Subject: Test\r\n\r\nThis is a test email."
+            }
+        }
+        mock_client.fetch.return_value = fetch_response
+
+        # Agora, chame a função get_emails
+        emails = get_emails()
+
+        # Faça as verificações
+        self.assertEqual(len(emails), 1)
+        self.assertEqual(emails[0]['subject'], 'Test')
+        self.assertEqual(emails[0]['body'], 'This is a test email.')
+
+        # Verifique se as funções foram chamadas com os parâmetros corretos
+        mock_imapclient.assert_called_once_with(settings.MAIL_SERVER)
+        mock_client.login.assert_called_once_with(
+            settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+        mock_client.select_folder.assert_called_once_with('INBOX')
+        mock_client.search.assert_called_once_with(
+            [u'FROM', settings.MAIL_USERNAME])
+        mock_client.fetch.assert_called_once_with(['123'], ['BODY[]'])
