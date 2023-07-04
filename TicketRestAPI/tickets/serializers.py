@@ -11,9 +11,10 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['id', 'ticket', 'user', 'text', 'created_at', 'updated_at']
 
+
 class TicketSerializer(serializers.ModelSerializer):
-    comments = CommentSerializer(many=True)
+    comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Ticket
-        fields = ['id', 'thread', 'title', 'created_at', 'updated_at', 'status', 'code', 'files', 'responses', 'subject_from_email', 'comments']
+        fields = ['id', 'thread', 'title', 'created_at', 'updated_at', 'status', 'code', 'files', 'body', 'comments']

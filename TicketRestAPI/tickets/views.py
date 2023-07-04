@@ -21,6 +21,8 @@ class TicketThreadViewSet(viewsets.ModelViewSet):
         fetch_and_process_emails()
         return Response({'status': 'Emails fetched and processed successfully'}, status=status.HTTP_200_OK)
 
+    def destroy(self, request, *args, **kwargs):
+        return Response({'detail': 'Deletion of TicketThread is not allowed.'}, status=status.HTTP_403_FORBIDDEN)
 
 class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
