@@ -51,7 +51,7 @@ def extract_code_from_subject(subject):
 def create_or_update_ticket(subject, body, code):
     # Create or update ticket
     ticket, created = Ticket.objects.get_or_create(code=code,
-                                                   defaults={'subject': subject, 'body': body})
+                                                   defaults={'title': subject, 'body': body})
     if not created:
         ticket.title = subject
         ticket.body = body
@@ -70,8 +70,8 @@ def update_ticket_and_thread_status(ticket_instance, subject):
 def fetch_and_process_emails():
     emails = get_emails()
     for email_data in emails:
-        subject = email_data['subject']
+        title = email_data['subject']
         body = email_data['body']
-        code = extract_code_from_subject(subject)
-        ticket_instance = create_or_update_ticket(subject, body, code)
-        update_ticket_and_thread_status(ticket_instance, subject)
+        code = extract_code_from_subject(title)
+        ticket_instance = create_or_update_ticket(title, body, code)
+        update_ticket_and_thread_status(ticket_instance, title)
