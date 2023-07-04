@@ -52,7 +52,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'TicketsSPARest.urls'
+ROOT_URLCONF = 'TicketRestAPI.urls'
 
 TEMPLATES = [
     {
@@ -70,7 +70,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'TicketsSPARest.wsgi.application'
+WSGI_APPLICATION = 'TicketRestAPI.wsgi.application'
 
 
 # Database
