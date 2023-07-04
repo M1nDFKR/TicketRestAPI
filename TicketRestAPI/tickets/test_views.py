@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse
@@ -15,7 +16,10 @@ class TicketThreadViewSetTestCase(APITestCase):
         # Set up the URL for the fetch_emails action
         self.url = reverse('ticketthread-fetch-emails')
 
-    def test_fetch_emails(self):
+    @patch('tickets.views.fetch_and_process_emails')
+    def test_fetch_emails(self, mock_fetch_and_process_emails):
+        # Configure the mock to return a successful response
+        mock_fetch_and_process_emails.return_value = None
         # Send a POST request to the fetch_emails endpoint
         response = self.client.post(self.url)
         # Check the response status code
