@@ -1,20 +1,34 @@
-from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
+from django.urls import reverse
 
 import django
 django.setup()
 
-from .factories import TicketFactory, TicketThreadFactory
+from .factories import TicketThreadFactory
 
-
-class TicketAPITests(APITestCase):
+class TicketThreadViewSetTestCase(APITestCase):
     def setUp(self):
-        self.ticket_thread = TicketThreadFactory()
-        self.ticket = TicketFactory(thread=self.ticket_thread)
-        
-    def test_get_ticket_list(self):
-        url = reverse('ticket-list')  # replace 'ticket-list' with your actual url name
-        response = self.client.get(url)
+        # Create some TicketThread instances for testing
+        self.thread1 = TicketThreadFactory()
+        self.thread2 = TicketThreadFactory()
+        # Set up the URL for the fetch_emails action
+        self.url = reverse('ticketthread-fetch-emails')
+
+    def test_fetch_emails(self):
+        # Send a POST request to the fetch_emails endpoint
+        response = self.client.post(self.url)
+        # Check the response status code
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        # Check the response data
+        self.assertEqual(
+            response.data, {'status': 'Emails fetched and processed successfully'}
+        )
+        # Additional assertions if necessary
+
+    def test_fetch_emails_with_invalid_method(self):
+        # Send a GET request to the fetch_emails endpoint
+        response = self.client.get(self.url)
+        # Check that the response status code is 405 Method Not Allowed
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        # Additional assertions if necessary
