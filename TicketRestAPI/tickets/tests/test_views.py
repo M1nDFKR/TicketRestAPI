@@ -6,19 +6,15 @@ from unittest.mock import patch
 import django
 django.setup()
 
-from .factories import CommentFactory
-from .serializers import CommentSerializer
-from .models import Comment
+from tickets.factories import TicketThreadFactory
 
-class CommentViewSetTest(APITestCase):
+class TicketThreadViewSetTestCase(APITestCase):
     def setUp(self):
-        pass
-
-    def test_list_comments(self):
-        CommentFactory.create_batch(3)
-
-        url = reverse('comments')
-        response = self.client.get(url)
+        # Create some TicketThread instances for testing
+        self.thread1 = TicketThreadFactory()
+        self.thread2 = TicketThreadFactory()
+        # Set up the URL for the fetch_emails action
+        self.url = reverse('ticketthread-fetch-emails')
 
         # Create a test user and set up authentication
         self.user = User.objects.create_user(username='testuser', password='testpass')
@@ -33,7 +29,11 @@ class CommentViewSetTest(APITestCase):
         response = self.client.post(self.url)
         # Check the response status code
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+        # Check the response data
+        self.assertEqual(
+            response.data, {'status': 'Emails fetched and processed successfully'}
+        )
+        # Additional assertions if necessary
 
     def test_fetch_emails_with_invalid_method(self):
         # Send a GET request to the fetch_emails endpoint
