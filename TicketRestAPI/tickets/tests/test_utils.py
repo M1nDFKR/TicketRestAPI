@@ -2,46 +2,31 @@ from unittest import mock
 from unittest.mock import patch, MagicMock
 from django.test import TestCase
 from django.conf import settings
-from tickets.utils import get_emails
+from tickets.utils import get_body
+from email.message import EmailMessage
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
-class GetEmailsTest(TestCase):
-    @patch('imapclient.IMAPClient')
-    def test_get_emails(self, mock_imapclient):
-        # Crie uma instância mock do cliente IMAP
-        mock_client = MagicMock()
-        mock_imapclient.return_value = mock_client
+class GetBodyTest(TestCase):
 
-        # Configure o comportamento de 'login' para que ele não falhe
-        mock_client.login.return_value = None
+    def test_get_body_for_multipart_message(self):
+        # Criar uma mensagem de e-mail multipart
+        msg = MIMEMultipart()
+        body_part = MIMEText("This is the main content", 'plain')
+        msg.attach(body_part)
+        attachment_part = MIMEText("This is an attachment", 'plain')
+        msg.attach(attachment_part)
 
-        # Configure o comportamento de 'select_folder'
-        mock_client.select_folder.return_value = None
+        # Testar a função get_body
+        body = get_body(msg)
+        self.assertEqual(body, "This is the main content")
 
-        # Configure o comportamento de 'search'
-        mock_client.search.return_value = ['123']
+    def test_get_body_for_singlepart_message(self):
+        # Criar uma mensagem de e-mail singlepart
+        msg = EmailMessage()
+        msg.set_content("This is the content")
 
-        # Crie um exemplo de resposta para 'fetch'
-        fetch_response = {
-            '123': {
-                b'BODY[]': b"Subject: Test\r\n\r\nThis is a test email."
-            }
-        }
-        mock_client.fetch.return_value = fetch_response
-
-        # Agora, chame a função get_emails
-        emails = get_emails()
-
-        # Faça as verificações
-        self.assertEqual(len(emails), 1)
-        self.assertEqual(emails[0]['subject'], 'Test')
-        self.assertEqual(emails[0]['body'], 'This is a test email.')
-
-        # Verifique se as funções foram chamadas com os parâmetros corretos
-        mock_imapclient.assert_called_once_with(settings.MAIL_SERVER)
-        mock_client.login.assert_called_once_with(
-            settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
-        mock_client.select_folder.assert_called_once_with('INBOX')
-        mock_client.search.assert_called_once_with(
-            [u'FROM', settings.MAIL_USERNAME])
-        mock_client.fetch.assert_called_once_with(['123'], ['BODY[]'])
+        # Testar a função get_body
+        body = get_body(msg)
+        self.assertEqual(body, "This is the content\n")

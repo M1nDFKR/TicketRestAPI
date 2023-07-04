@@ -4,23 +4,24 @@ import re
 from django.conf import settings
 from .models import Ticket, TicketThread
 
+
 def get_emails():
     # Create an IMAP client
     client = imapclient.IMAPClient(settings.MAIL_SERVER)
-    
+
     # Login to the account
     client.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
-    
+
     # Select the mailbox you want to delete in
     # If you want SPAM, use "INBOX.SPAM"
     client.select_folder('INBOX')
-    
+
     # Search for specific mail by sender
     messages = client.search([u'FROM', settings.MAIL_USERNAME])
-    
+
     # Fetch the mails
     response = client.fetch(messages, ['BODY[]'])
-    
+
     emails = []
     for msgid, data in response.items():
         raw_email = data[b'BODY[]']
@@ -30,10 +31,6 @@ def get_emails():
         emails.append({'subject': subject, 'body': body})
     return emails
 
-def parse_email(msg):
-    # Parse a single email
-    email_message = email.message_from_string(msg)
-    return email_message
 
 def get_body(email_message):
     if email_message.is_multipart():
@@ -43,10 +40,12 @@ def get_body(email_message):
     else:
         return email_message.get_payload()
 
+
 def extract_code_from_subject(subject):
     # Extract code from subject using regex
     match = re.search(r'\[(.*?)\]', subject)
     return match.group(1) if match else None
+
 
 def create_or_update_ticket(subject, body, code):
     thread, _ = TicketThread.objects.get_or_create(thread_code=code)
@@ -59,6 +58,7 @@ def create_or_update_ticket(subject, body, code):
         ticket.save()
     return ticket
 
+
 def update_ticket_and_thread_status(ticket_instance, subject):
     # Update status if subject contains "fechado/resolvido"
     if "fechado" in subject or "resolvido" in subject:
@@ -67,7 +67,8 @@ def update_ticket_and_thread_status(ticket_instance, subject):
         thread = TicketThread.objects.get(tickets=ticket_instance)
         thread.status = "closed"
         thread.save()
-              
+
+
 def fetch_and_process_emails():
     emails = get_emails()
     for email_data in emails:
