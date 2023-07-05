@@ -35,6 +35,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
+    'tickets',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.sessions',
@@ -42,7 +43,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'tickets',
 ]
 
 REST_FRAMEWORK = {
