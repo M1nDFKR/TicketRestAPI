@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from .models import TicketThread, Ticket, Comment
 from .serializers import TicketThreadSerializer, TicketSerializer, CommentSerializer
 from .utils import fetch_and_process_emails
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from unittest import mock
 
 User = get_user_model()
@@ -14,7 +14,7 @@ User = get_user_model()
 class TicketThreadViewSet(viewsets.ModelViewSet):
     queryset = TicketThread.objects.all().order_by('created_at')
     serializer_class = TicketThreadSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     @action(detail=False, methods=['post'])
     def fetch_emails(self, request):
@@ -27,19 +27,14 @@ class TicketThreadViewSet(viewsets.ModelViewSet):
 class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
-    @mock.patch('myapp.views.TicketViewSet.perform_create')
-    def perform_create(self, serializer, mock_create):
-        mock_create.return_value = None
-        serializer.save()
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
-    @mock.patch('myapp.views.CommentViewSet.perform_create')
     def perform_create(self, serializer, mock_create):
         mock_create.return_value = None
         serializer.save(user=self.request.user)
