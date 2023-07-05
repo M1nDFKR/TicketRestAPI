@@ -5,40 +5,38 @@ from django.conf import settings
 from tickets.utils import create_or_update_ticket
 from tickets.models import Ticket, TicketThread
 
-
+# Classe de teste que herda de TestCase para realizar testes unitários
 class CreateOrUpdateTicketTest(TestCase):
-    @patch('tickets.utils.Ticket')
-    @patch('tickets.utils.TicketThread')
+
+    # Método de teste para a função create_or_update_ticket
+    @patch('tickets.utils.Ticket')  # Decorator para substituir a classe Ticket pelo mock
+    @patch('tickets.utils.TicketThread')  # Decorator para substituir a classe TicketThread pelo mock
     def test_create_or_update_ticket(self, mock_ticket_thread, mock_ticket):
-        # Crie instâncias mock para Ticket e TicketThread
+        # Mocks das instâncias de TicketThread e Ticket
         mock_thread = mock.MagicMock()
         mock_ticket_instance = mock.MagicMock()
 
-        mock_ticket_thread.objects.get_or_create.return_value = (
-            mock_thread, True)
-        mock_ticket.objects.get_or_create.return_value = (
-            mock_ticket_instance, True)
+        # Configuração dos retornos dos métodos get_or_create dos mocks
+        mock_ticket_thread.objects.get_or_create.return_value = (mock_thread, True)
+        mock_ticket.objects.get_or_create.return_value = (mock_ticket_instance, True)
 
-        # Defina os valores que você passará para a função
+        # Dados de teste
         subject = "Test subject"
         body = "Test body"
         code = "Test code"
 
-        # Chame a função
+        # Chamada da função create_or_update_ticket
         result = create_or_update_ticket(subject, body, code)
 
-        # Verifique se o Ticket e o TicketThread foram chamados corretamente
-        mock_ticket_thread.objects.get_or_create.assert_called_once_with(
-            thread_code=code)
-        mock_ticket.objects.get_or_create.assert_called_once_with(code=code,
-                                                                  defaults={'title': subject, 'body': body,
-                                                                            'thread': mock_thread})
+        # Verificações dos métodos chamados nos mocks
+        mock_ticket_thread.objects.get_or_create.assert_called_once_with(thread_code=code)
+        mock_ticket.objects.get_or_create.assert_called_once_with(
+            code=code, defaults={'title': subject, 'body': body, 'thread': mock_thread})
 
-        # Verifique se o ticket é retornado
+        # Verificação do resultado retornado pela função
         self.assertEqual(result, mock_ticket_instance)
 
-        # Caso o ticket já exista, verifique se ele é atualizado corretamente
-        # Se o ticket já existia (não foi criado)
+        # Verificações adicionais se get_or_create retornar False
         if not mock_ticket.objects.get_or_create.return_value[1]:
             self.assertEqual(result.title, subject)
             self.assertEqual(result.body, body)
