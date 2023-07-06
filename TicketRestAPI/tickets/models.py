@@ -51,7 +51,7 @@ class Comment(models.Model):
         return f"{self.ticket.title} - {self.user.username}"
     
 class Registro(models.Model):
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='registros')
     data_login = models.DateTimeField()
     data_logout = models.DateTimeField(null=True, blank=True)
     
