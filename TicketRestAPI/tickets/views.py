@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .models import TicketThread, Ticket, Comment
 from .serializers import TicketThreadSerializer, TicketSerializer, CommentSerializer
+from .utils import fetch_and_process_emails
 from rest_framework.permissions import IsAuthenticated
 from unittest import mock
 
@@ -17,10 +18,10 @@ class TicketThreadViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     # Ação personalizada para buscar e processar e-mails
-    """ @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'])
     def fetch_emails(self, request):
         fetch_and_process_emails()  # Função para buscar e processar e-mails
-        return Response({'status': 'Emails fetched and processed successfully'}, status=status.HTTP_200_OK) """
+        return Response({'status': 'Emails fetched and processed successfully'}, status=status.HTTP_200_OK)
 
     # Sobrescreve o método destruir para impedir a exclusão de objetos TicketThread
     def destroy(self, request, *args, **kwargs):
