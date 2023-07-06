@@ -1,16 +1,15 @@
-from django.contrib import admin
-from .models import Ticket, TicketThread, Comment, Registro
+from datetime import timedelta
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.utils import timezone
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib import colors
-from datetime import timedelta
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from .models import Ticket, TicketThread, Comment, Registro
 
 
 class CustomUserAdmin(UserAdmin):
@@ -31,13 +30,18 @@ class CustomUserAdmin(UserAdmin):
             title = Paragraph(login_info, styles['Title'])
             elements.append(title)
 
-            registros = Registro.objects.filter(usuario=user).order_by('data_login')
+            registros = Registro.objects.filter(
+                usuario=user).order_by('data_login')
             data = [['Login', 'Logout', 'Tempo de Login']]
             for registro in registros:
-                login_date = registro.data_login.astimezone(timezone.get_current_timezone()).strftime('%Y-%m-%d %H:%M:%S')
-                logout_date = registro.data_logout.astimezone(timezone.get_current_timezone()).strftime('%Y-%m-%d %H:%M:%S') if registro.data_logout else ""
+                login_date = registro.data_login.astimezone(
+                    timezone.get_current_timezone()).strftime('%Y-%m-%d %H:%M:%S')
+                logout_date = registro.data_logout.astimezone(timezone.get_current_timezone(
+                )).strftime('%Y-%m-%d %H:%M:%S') if registro.data_logout else ""
 
-                duration = registro.data_logout - registro.data_login if registro.data_logout else timedelta(seconds=0)
+                duration = registro.data_logout - \
+                    registro.data_login if registro.data_logout else timedelta(
+                        seconds=0)
                 hours, remainder = divmod(duration.total_seconds(), 3600)
                 minutes, seconds = divmod(remainder, 60)
                 login_duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
@@ -62,9 +66,7 @@ class CustomUserAdmin(UserAdmin):
         doc.build(elements)
         return response
 
-admin.site.register(Ticket)
-admin.site.register(TicketThread)
-admin.site.register(Comment)
-admin.site.register(Registro)
+
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
+admin.site.register((Ticket, TicketThread, Comment, Registro))
