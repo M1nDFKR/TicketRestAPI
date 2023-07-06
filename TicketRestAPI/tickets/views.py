@@ -43,9 +43,7 @@ class TicketThreadViewSet(viewsets.ModelViewSet):
 class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     serializer_class = TicketSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
+    
 
 # Classe responsável pela manipulação de comentários
 class CommentViewSet(viewsets.ModelViewSet):
