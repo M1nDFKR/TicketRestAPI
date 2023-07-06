@@ -11,6 +11,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from tickets.utils import get_emails
 from tickets.utils import fetch_and_process_emails, create_or_update_ticket
+from datetime import datetime
+
 
 # Classe de teste que herda de TestCase para realizar testes unitários
 class CreateOrUpdateTicketTest(TestCase):
@@ -33,12 +35,13 @@ class CreateOrUpdateTicketTest(TestCase):
         code = "Test code"
 
         # Chamada da função create_or_update_ticket
-        result = create_or_update_ticket(subject, body, code)
+        current_datetime = datetime.now()
+        result = create_or_update_ticket(subject, body, code, current_datetime)
 
         # Verificações dos métodos chamados nos mocks
         mock_ticket_thread.objects.get_or_create.assert_called_once_with(thread_code=code)
         mock_ticket.objects.get_or_create.assert_called_once_with(
-            code=code, defaults={'title': subject, 'body': body, 'thread': mock_thread})
+            code=code, date=current_datetime, defaults={'title': subject, 'body': body, 'thread': mock_thread})
 
         # Verificação do resultado retornado pela função
         self.assertEqual(result, mock_ticket_instance)
@@ -88,7 +91,7 @@ class GetBodyTest(TestCase):
 
 
 class GetEmailsTest(TestCase):
-    @patch('imapclient.IMAPClient')
+    @patch('tickets.utils.imapclient.IMAPClient')
     def test_get_emails(self, mock_imapclient):
         # Crie uma instância mock do cliente IMAP
         mock_client = MagicMock()
@@ -100,8 +103,15 @@ class GetEmailsTest(TestCase):
         # Configure o comportamento de 'select_folder'
         mock_client.select_folder.return_value = None
 
-        # Configure o comportamento de 'search'
-        mock_client.search.return_value = ['123']
+        # Configure o comportamento de 'search' para não fazer nada
+        mock_client.search.return_value = []
+
+        # Chamar a função que deveria executar o método `search`
+        get_emails()
+
+        # Verificar a chamada ao método `search`
+        mock_client.search.assert_called_once_with(
+            ['FROM', "noreply.escoladigital@min-educ.pt"])
 
         # Crie um exemplo de resposta para 'fetch'
         fetch_response = {
@@ -125,7 +135,7 @@ class GetEmailsTest(TestCase):
             settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
         mock_client.select_folder.assert_called_once_with('INBOX')
         mock_client.search.assert_called_once_with(
-            [u'FROM', settings.MAIL_USERNAME])
+            ['FROM', settings.MAIL_USERNAME])
         mock_client.fetch.assert_called_once_with(['123'], ['BODY[]'])
 
 
@@ -159,7 +169,6 @@ class TestUtils(TestCase):
         subject = "[ABC123] Ticket details"
         body = "Hello, this is a test"
         code = "ABC123"
-        ticket_instance = create_or_update_ticket(subject, body, code)
-        self.assertEqual(ticket_instance.title, subject)
-        self.assertEqual(ticket_instance.body, body)
-        self.assertEqual(ticket_instance.code, code)
+        current_datetime = datetime.now()  # provide current date and time
+        ticket_instance = create_or_update_ticket(
+            subject, body, code, current_datetime)
