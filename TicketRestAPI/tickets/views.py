@@ -6,7 +6,16 @@ from .models import TicketThread, Ticket, Comment
 from .serializers import TicketThreadSerializer, TicketSerializer, CommentSerializer
 from .utils import fetch_and_process_emails
 from rest_framework.permissions import IsAuthenticated
-from unittest import mock
+from django.contrib.auth.views import LoginView
+from rest_framework.authtoken.models import Token
+from django.http import FileResponse
+from django.views.generic import View
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from datetime import datetime
+from .models import Registro
+from django.contrib.auth.models import User
+from django.http import JsonResponse
 
 User = get_user_model()
 
@@ -48,4 +57,9 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment = self.get_object()  # Obtém o objeto Comment com base no parâmetro pk
         comment.delete()  # Exclui o comentário
         return Response({'status': 'ok'})  # Retorna uma resposta de sucesso
+ 
+def get_users(request):
+    users = User.objects.all().values('id', 'username')  # Only get the id and username fields
+    return JsonResponse(list(users), safe=False)
+
 

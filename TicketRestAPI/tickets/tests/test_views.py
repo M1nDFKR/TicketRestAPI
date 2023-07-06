@@ -1,12 +1,21 @@
 from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate
-from rest_framework import status
+from rest_framework import status, viewsets, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.urls import reverse
 from django.contrib.auth.models import User
 from tickets.factories import TicketThreadFactory, TicketFactory
 from unittest.mock import patch
 from tickets.models import TicketThread
+from django.contrib.auth import get_user_model
+from tickets.models import TicketThread
+from tickets.serializers import TicketThreadSerializer
+from tickets.utils import fetch_and_process_emails
+
 import django
 django.setup()
+
+User = get_user_model()
 
 from tickets.factories import TicketThreadFactory
 
@@ -98,19 +107,22 @@ class TicketThreadViewSetTestCase(APITestCase):
         self.client.force_authenticate(user=None)
 
         response = self.client.get(reverse('ticketthread-list'))
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        response = self.client.get(reverse('ticketthread-detail', kwargs={'pk': self.thread1.pk}))
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        response = self.client.get(
+            reverse('ticketthread-detail', kwargs={'pk': self.thread1.pk}))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         response = self.client.post(reverse('ticketthread-list'), data={})
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        response = self.client.put(reverse('ticketthread-detail', kwargs={'pk': self.thread1.pk}), data={})
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        response = self.client.put(
+            reverse('ticketthread-detail', kwargs={'pk': self.thread1.pk}), data={})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        response = self.client.delete(reverse('ticketthread-detail', kwargs={'pk': self.thread1.pk}))
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        response = self.client.delete(
+            reverse('ticketthread-detail', kwargs={'pk': self.thread1.pk}))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class TicketViewSetTestCase(APITestCase):
     def setUp(self):

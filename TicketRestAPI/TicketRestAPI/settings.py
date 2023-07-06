@@ -43,10 +43,16 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 REST_FRAMEWORK = {
-    # Your DRF configuration
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication', 
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
 
 MIDDLEWARE = [
@@ -68,7 +74,7 @@ ROOT_URLCONF = 'TicketRestAPI.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'tickets', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -80,6 +86,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'TicketRestAPI.wsgi.application'
 
