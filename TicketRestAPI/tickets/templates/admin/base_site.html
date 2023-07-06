@@ -4,7 +4,15 @@
 {% block title %}{{ title }} | Your New Admin Title{% endblock %}
 
 {% block branding %}
-<h1 id="site-name"><a href="{% url 'admin:index' %}">Your New Admin Title</a></h1>
+<h1 id="site-name"><a href="{% url 'admin:index' %}">Site Admin</a></h1>
 {% endblock %}
 
-{% block nav-global %}{% endblock %}
+{% block nav-global %}
+  <div>
+    {% if request.user.is_authenticated %}
+      <a href="{% url 'gerar_pdf' user_id=request.user.id %}" download class="btn btn-primary">Gerar PDF</a>
+    {% else %}
+      <a href="{% url 'admin:login' %}" class="btn btn-primary">Fazer login</a>
+    {% endif %}
+  </div>
+{% endblock %}

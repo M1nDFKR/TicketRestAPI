@@ -39,7 +39,6 @@ class Ticket(models.Model):
         return self.title
 
 
-
 class Comment(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -49,4 +48,11 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.ticket.title} - {self.user.username}"
-
+    
+class Registro(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    data_login = models.DateTimeField()
+    data_logout = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"Registro {self.pk}"

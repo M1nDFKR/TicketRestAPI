@@ -6,7 +6,12 @@ from .models import TicketThread, Ticket, Comment
 from .serializers import TicketThreadSerializer, TicketSerializer, CommentSerializer
 from .utils import fetch_and_process_emails
 from rest_framework.permissions import IsAuthenticated
-from unittest import mock
+from django.http import FileResponse
+from django.views.generic import View
+from reportlab.pdfgen import canvas
+from io import BytesIO
+from datetime import datetime
+from .models import Registro
 
 User = get_user_model()
 
@@ -50,4 +55,40 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment = self.get_object()  # Obtém o objeto Comment com base no parâmetro pk
         comment.delete()  # Exclui o comentário
         return Response({'status': 'ok'})  # Retorna uma resposta de sucesso
+
+class PDFView(View):
+    def get(self, request, user_id, *args, **kwargs):
+        response = FileResponse(self.generate_pdf(user_id), content_type='application/pdf')
+        return response
+
+    def generate_pdf(self, user_id):
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer)
+
+        # Adicione o texto com informações de login e data ao PDF
+        login_info = f"Usuário: {self.request.user.username}"
+        login_date = f"Data de Login: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        p.drawString(100, 100, login_info)
+        p.drawString(100, 120, login_date)
+
+        # Recupere os registros do usuário específico do banco de dados
+        registros = Registro.objects.filter(usuario__id=user_id).order_by('data_login')
+
+        # Adicione os registros ao PDF
+        y_position = 140  # Posição vertical inicial para os registros
+        for registro in registros:
+            registro_info = f"Data de Login: {registro.data_login.strftime('%Y-%m-%d %H:%M:%S')}"
+            if registro.data_logout:
+                registro_info += f", Data de Logout: {registro.data_logout.strftime('%Y-%m-%d %H:%M:%S')}"
+            registro_info += f", Usuário: {registro.usuario.username}"
+            p.drawString(100, y_position, registro_info)
+            y_position += 20  # Incrementa a posição vertical para o próximo registro
+
+        p.showPage()
+        p.save()
+        buffer.seek(0)
+        return buffer
+    
+
+
 
