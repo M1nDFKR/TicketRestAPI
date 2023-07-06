@@ -91,52 +91,49 @@ class GetBodyTest(TestCase):
 
 
 class GetEmailsTest(TestCase):
-    @patch('tickets.utils.imapclient.IMAPClient')
-    def test_get_emails(self, mock_imapclient):
-        # Crie uma instância mock do cliente IMAP
-        mock_client = MagicMock()
-        mock_imapclient.return_value = mock_client
+    from unittest import mock
+from django.test import TestCase
+from django.conf import settings
+from tickets.utils import get_emails
 
-        # Configure o comportamento de 'login' para que ele não falhe
+class GetEmailsTest(TestCase):
+
+    @mock.patch('tickets.utils.imapclient.IMAPClient')
+    @mock.patch('tickets.utils.decode_header')
+    @mock.patch('tickets.utils.get_body')
+    def test_get_emails(self, mock_get_body, mock_decode_header, mock_imapclient):
+        # Setting up the mock objects
+        mock_client = mock_imapclient.return_value
         mock_client.login.return_value = None
-
-        # Configure o comportamento de 'select_folder'
         mock_client.select_folder.return_value = None
-
-        # Configure o comportamento de 'search' para não fazer nada
-        mock_client.search.return_value = []
-
-        # Chamar a função que deveria executar o método `search`
-        get_emails()
-
-        # Verificar a chamada ao método `search`
-        mock_client.search.assert_called_once_with(
-            ['FROM', "noreply.escoladigital@min-educ.pt"])
-
-        # Crie um exemplo de resposta para 'fetch'
-        fetch_response = {
-            '123': {
-                b'BODY[]': b"Subject: Test\r\n\r\nThis is a test email."
-            }
+        mock_client.search.return_value = ['msgid1', 'msgid2']
+        mock_client.fetch.return_value = {
+            'msgid1': {b'BODY[]': 'raw_email_1'},
+            'msgid2': {b'BODY[]': 'raw_email_2'},
         }
-        mock_client.fetch.return_value = fetch_response
+        mock_email_message = mock.MagicMock()
+        mock_email_message.get.return_value = 'Raw Subject'
+        mock_decode_header.return_value = [('Decoded Subject', 'utf-8')]
+        mock_get_body.return_value = 'Email Body'
 
-        # Agora, chame a função get_emails
-        emails = get_emails()
+        with mock.patch('tickets.utils.email.message_from_bytes', return_value=mock_email_message):
+            emails = get_emails()
 
-        # Faça as verificações
-        self.assertEqual(len(emails), 1)
-        self.assertEqual(emails[0]['subject'], 'Test')
-        self.assertEqual(emails[0]['body'], 'This is a test email.')
-
-        # Verifique se as funções foram chamadas com os parâmetros corretos
+        # Check the interactions with the mock objects
         mock_imapclient.assert_called_once_with(settings.MAIL_SERVER)
-        mock_client.login.assert_called_once_with(
-            settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+        mock_client.login.assert_called_once_with(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
         mock_client.select_folder.assert_called_once_with('INBOX')
-        mock_client.search.assert_called_once_with(
-            ['FROM', settings.MAIL_USERNAME])
-        mock_client.fetch.assert_called_once_with(['123'], ['BODY[]'])
+        mock_client.search.assert_called_once_with(['FROM', "noreply.escoladigital@min-educ.pt"])
+        mock_client.fetch.assert_called_once_with(['msgid1', 'msgid2'], ['BODY[]'])
+        mock_decode_header.assert_has_calls([mock.call('Raw Subject'), mock.call('Raw Subject')])
+        mock_get_body.assert_has_calls([mock.call(mock_email_message), mock.call(mock_email_message)])
+
+        # Check the returned value
+        expected_emails = [
+            {'subject': 'Decoded Subject', 'body': 'Email Body'},
+            {'subject': 'Decoded Subject', 'body': 'Email Body'},
+        ]
+        self.assertEqual(emails, expected_emails)
 
 
 class TestUtils(TestCase):
