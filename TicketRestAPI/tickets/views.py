@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from .models import TicketThread, Ticket, Comment
 from .serializers import TicketThreadSerializer, TicketSerializer, CommentSerializer
 from .utils import fetch_and_process_emails
-from rest_framework.permissions import IsAuthenticated
 from django.http import FileResponse
 from django.views.generic import View
 from reportlab.pdfgen import canvas
