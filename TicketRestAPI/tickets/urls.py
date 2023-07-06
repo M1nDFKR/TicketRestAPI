@@ -12,5 +12,4 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('get-users/', views.get_users, name='get-users'),
     path('api/login/', obtain_auth_token, name='api_token_auth'),  # add this line
-    path('gerar_pdf/<int:user_id>/', PDFView.as_view(), name='gerar_pdf')
 ]
