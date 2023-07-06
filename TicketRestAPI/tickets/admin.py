@@ -11,16 +11,17 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from .models import Ticket, TicketThread, Comment, Registro
 
-
 class CustomUserAdmin(UserAdmin):
     actions = ['download_user_log_pdf']
 
     def download_user_log_pdf(self, request, queryset):
+        # Cria uma resposta HTTP para o arquivo PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="user_log.pdf"'
 
+        # Cria um objeto SimpleDocTemplate para gerar o PDF
         doc = SimpleDocTemplate(response, pagesize=letter)
-        elements = []
+        elements = []  # Lista para armazenar os elementos do PDF
 
         for user in queryset:
             username = user.username
@@ -28,20 +29,21 @@ class CustomUserAdmin(UserAdmin):
 
             styles = getSampleStyleSheet()
             title = Paragraph(login_info, styles['Title'])
-            elements.append(title)
+            elements.append(title)  # Adiciona o título ao PDF
 
+            # Recupera os registros do usuário e cria a tabela de dados
             registros = Registro.objects.filter(
                 usuario=user).order_by('data_login')
             data = [['Login', 'Logout', 'Tempo de Login']]
             for registro in registros:
+                # Formata as datas e duração para exibição adequada
                 login_date = registro.data_login.astimezone(
                     timezone.get_current_timezone()).strftime('%Y-%m-%d %H:%M:%S')
-                logout_date = registro.data_logout.astimezone(timezone.get_current_timezone(
-                )).strftime('%Y-%m-%d %H:%M:%S') if registro.data_logout else ""
+                logout_date = registro.data_logout.astimezone(
+                    timezone.get_current_timezone()).strftime('%Y-%m-%d %H:%M:%S') if registro.data_logout else ""
 
-                duration = registro.data_logout - \
-                    registro.data_login if registro.data_logout else timedelta(
-                        seconds=0)
+                duration = registro.data_logout - registro.data_login if registro.data_logout else timedelta(
+                    seconds=0)
                 hours, remainder = divmod(duration.total_seconds(), 3600)
                 minutes, seconds = divmod(remainder, 60)
                 login_duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
@@ -59,13 +61,12 @@ class CustomUserAdmin(UserAdmin):
                 ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ])
-            table.setStyle(table_style)
+            table.setStyle(table_style)  # Aplica o estilo à tabela
 
-            elements.append(table)
+            elements.append(table)  # Adiciona a tabela ao PDF
 
-        doc.build(elements)
+        doc.build(elements)  # Gera o PDF com os elementos
         return response
-
 
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
