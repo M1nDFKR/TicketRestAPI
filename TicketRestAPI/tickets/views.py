@@ -1,4 +1,6 @@
 from rest_framework import viewsets, permissions, status
+from django.contrib.auth import user_logged_in
+from django.contrib.auth import user_logged_out
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
@@ -17,9 +19,12 @@ from django.utils import timezone
 from .models import Registro
 from django.contrib.auth.models import User
 from django.http import JsonResponse
+from rest_framework.authtoken.views import ObtainAuthToken
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator  
 from django.contrib.auth import authenticate, login
+from rest_framework.views import APIView
+from rest_framework.authentication import TokenAuthentication
 
 User = get_user_model()
 
@@ -66,56 +71,32 @@ def get_users(request):
     users = User.objects.all().values('id', 'username')  # Only get the id and username fields
     return JsonResponse(list(users), safe=False)
 
-class CustomLoginView(LoginView):
+
+class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        print("Received POST request")  # add this line
-        return super().post(request, *args, **kwargs)
-    
-    def dispatch(self, request, *args, **kwargs):
-        print("Dispatching request")  # add this line
-        return super().dispatch(request, *args, **kwargs)
-    
-    def form_valid(self, form):
-        username = form.cleaned_data.get('username')
-        password = form.cleaned_data.get('password')
+        response = super().post(request, *args, **kwargs)
 
-        user = authenticate(self.request, username=username, password=password)
+        token = Token.objects.get(key=response.data['token'])
+        user = token.user
 
-        if user is not None:
-            print(f"User {username} authenticated successfully")  # add this line
-            login(self.request, user)
-        else:
-            print(f"Failed to authenticate user {username}")  # add this line
+        # Send user_logged_in signal
+        user_logged_in.send(sender=user.__class__, request=request, user=user)
 
-        # This method is called when valid form data has been POSTed.
-        # It should return an HttpResponse.
-        response = super().form_valid(form)
-
-        # create token after user is logged in
-        token, created = Token.objects.get_or_create(user=self.request.user)
-
-        # create Registro instance
-        #Registro.objects.create(usuario=self.request.user, data_login=timezone.now())
-
-        # you can add the token to a cookie, or include it in the response body
-        response.set_cookie('auth_token', token.key)
+        # Log in the user (optional)
+        # login(request, user)
 
         return response
     
-    def form_invalid(self, form):
-        print("Form is invalid")  # add this line
-        return super().form_invalid(form)
-    
-class CustomLogoutView(LogoutView):
-    def dispatch(self, request, *args, **kwargs):
-        # This method is called before the view is dispatched.
-        # It should return an HttpResponse.
 
-        # update Registro instance
-        registro = Registro.objects.filter(usuario=request.user).order_by('-data_login').first()
-        if registro:
-            registro.data_logout = timezone.now()
-            registro.save()
+class LogoutView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
-        response = super().dispatch(request, *args, **kwargs)
-        return response
+    def post(self, request):
+        # delete the token to force a login
+        request.user.auth_token.delete()
+
+        # send the logout signal
+        user_logged_out.send(sender=request.user.__class__, request=request, user=request.user)
+
+        return Response({"message": "Logged out successfully"}, status=204)
