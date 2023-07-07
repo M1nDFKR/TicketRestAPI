@@ -30,8 +30,11 @@ def get_emails():
         subject = ''.join([str(text, charset or 'utf-8') if isinstance(text,
                           bytes) else str(text) for text, charset in decoded_header])
         body = get_body(email_message)
-        emails.append({'subject': subject, 'body': body})
 
+        date_str = email_message.get('Date')
+        date = parsedate_to_datetime(date_str)
+
+        emails.append({'subject': subject, 'body': body, 'date': date})
     return emails
 
 
@@ -57,12 +60,13 @@ def create_or_update_ticket(subject, body, code, date):
     # Cria ou atualiza um ticket com base no código e na data.
     # Retorna a instância do ticket criado ou atualizado.
     thread, _ = TicketThread.objects.get_or_create(thread_code=code)
-    ticket, created = Ticket.objects.get_or_create(code=code, date=date,
-                                                   defaults={'title': subject, 'body': body, 'thread': thread})
+    ticket, created = Ticket.objects.get_or_create(code=code, date=date, defaults={
+                                                   'title': subject, 'body': body, 'thread': thread, 'date': date})
     if not created:
         ticket.title = subject
         ticket.body = body
         ticket.thread = thread
+        ticket.date = date
         ticket.save()
     return ticket
 
@@ -85,14 +89,10 @@ def fetch_and_process_emails():
         title = email_data['subject']
         body = email_data['body']
         code = extract_code_from_subject(title)
-        date_str = email_data.get('Date')
-        date = datetime.utcnow()  # default to the current date and time
-        if date_str:
-            try:
-                date = parsedate_to_datetime(date_str)
-            except Exception as e:
-                print(
-                    f"Could not parse date from email with title: {title}. Error: {e}")
+
+        # get the date from the email data
+        date = email_data['date']
+
         if code is None:
             print(f"Could not extract code from email with title: {title}")
             continue
