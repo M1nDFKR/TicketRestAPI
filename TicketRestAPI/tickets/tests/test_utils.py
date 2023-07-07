@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.conf import settings
 from tickets.utils import create_or_update_ticket
 from tickets.models import Ticket, TicketThread
+from freezegun import freeze_time
 from tickets.utils import extract_code_from_subject
 from tickets.utils import get_body
 from email.message import EmailMessage
@@ -11,7 +12,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from tickets.utils import get_emails
 from tickets.utils import fetch_and_process_emails, create_or_update_ticket
-from datetime import datetime
+import datetime
 
 
 # Classe de teste que herda de TestCase para realizar testes unitários
@@ -41,7 +42,10 @@ class CreateOrUpdateTicketTest(TestCase):
         # Verificações dos métodos chamados nos mocks
         mock_ticket_thread.objects.get_or_create.assert_called_once_with(thread_code=code)
         mock_ticket.objects.get_or_create.assert_called_once_with(
-            code=code, date=current_datetime, defaults={'title': subject, 'body': body, 'thread': mock_thread})
+            code=code, date=current_datetime, defaults={
+                'title': subject, 'body': body, 'thread': mock_thread, 'date': current_datetime}
+        )
+
 
         # Verificação do resultado retornado pela função
         self.assertEqual(result, mock_ticket_instance)
@@ -91,13 +95,7 @@ class GetBodyTest(TestCase):
 
 
 class GetEmailsTest(TestCase):
-    from unittest import mock
-from django.test import TestCase
-from django.conf import settings
-from tickets.utils import get_emails
-
-class GetEmailsTest(TestCase):
-
+    @freeze_time("2023-07-07 12:00:00")
     @mock.patch('tickets.utils.imapclient.IMAPClient')
     @mock.patch('tickets.utils.decode_header')
     @mock.patch('tickets.utils.get_body')

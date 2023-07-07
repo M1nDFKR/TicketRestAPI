@@ -31,7 +31,7 @@ def get_emails():
                           bytes) else str(text) for text, charset in decoded_header])
         body = get_body(email_message)
 
-        date_str = email_message.get('Date')
+        date_str = email_message.get('Date', None)
         date = parsedate_to_datetime(date_str)
 
         emails.append({'subject': subject, 'body': body, 'date': date})
