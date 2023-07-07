@@ -11,6 +11,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from .models import Ticket, TicketThread, Comment, Registro
 
+
 class CustomUserAdmin(UserAdmin):
     actions = ['download_user_log_pdf']
 
