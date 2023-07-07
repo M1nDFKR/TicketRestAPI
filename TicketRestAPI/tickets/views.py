@@ -25,6 +25,8 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth import authenticate, login
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
+from django.contrib.auth.decorators import login_required
+
 
 User = get_user_model()
 
@@ -70,6 +72,14 @@ class CommentViewSet(viewsets.ModelViewSet):
 def get_users(request):
     users = User.objects.all().values('id', 'username')  # Only get the id and username fields
     return JsonResponse(list(users), safe=False)
+
+@login_required
+def get_authenticated_user(request):
+    user = request.user
+    authenticated_user = {
+        'username': user.username,
+    }
+    return JsonResponse(authenticated_user)
 
 
 class CustomObtainAuthToken(ObtainAuthToken):

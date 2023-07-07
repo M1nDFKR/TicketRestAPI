@@ -12,7 +12,7 @@ router.register(r'comments', views.CommentViewSet)
 urlpatterns = [
     path('api/', include(router.urls)),
     path('get-users/', views.get_users, name='get-users'),
-    path('api/login/', CustomObtainAuthToken.as_view(), name='api_token_auth'), 
-    path('api/logout/', LogoutView.as_view(), name='api_token_logout'),  
-    
+    path('api/userinfo/', views.get_authenticated_user, name='userinfo'),
+    path('api/login/', CustomObtainAuthToken.as_view(), name='api_token_auth'),
+    path('api/logout/', LogoutView.as_view(), name='api_token_logout'),
 ]
