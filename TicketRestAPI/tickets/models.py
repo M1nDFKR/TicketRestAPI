@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db import models
-import re
-
+from django.contrib.auth.signals import user_logged_in
+from django.dispatch import receiver
+from django.utils import timezone
+from django.contrib.auth.signals import user_logged_out
 
 class TicketThread(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -57,3 +59,18 @@ class Registro(models.Model):
     
     def __str__(self):
         return f"Registro {self.pk}"
+
+# signal handler function
+@receiver(user_logged_in)
+def create_registro(sender, request, user, **kwargs):
+    print("create_registro is called.")
+    Registro.objects.create(usuario=user, data_login=timezone.now())
+
+
+@receiver(user_logged_out)
+def update_registro(sender, request, user, **kwargs):
+    print("update_registro is called.")
+    registro = Registro.objects.filter(usuario=user).order_by('-data_login').first()
+    if registro:
+        registro.data_logout = timezone.now()
+        registro.save()
