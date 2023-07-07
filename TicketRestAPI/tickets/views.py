@@ -6,16 +6,20 @@ from .models import TicketThread, Ticket, Comment
 from .serializers import TicketThreadSerializer, TicketSerializer, CommentSerializer
 from .utils import fetch_and_process_emails
 from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView , LogoutView
 from rest_framework.authtoken.models import Token
 from django.http import FileResponse
 from django.views.generic import View
 from reportlab.pdfgen import canvas
 from io import BytesIO
 from datetime import datetime
+from django.utils import timezone
 from .models import Registro
 from django.contrib.auth.models import User
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator  
+from django.contrib.auth import authenticate, login
 
 User = get_user_model()
 
@@ -62,4 +66,56 @@ def get_users(request):
     users = User.objects.all().values('id', 'username')  # Only get the id and username fields
     return JsonResponse(list(users), safe=False)
 
+class CustomLoginView(LoginView):
+    def post(self, request, *args, **kwargs):
+        print("Received POST request")  # add this line
+        return super().post(request, *args, **kwargs)
+    
+    def dispatch(self, request, *args, **kwargs):
+        print("Dispatching request")  # add this line
+        return super().dispatch(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        username = form.cleaned_data.get('username')
+        password = form.cleaned_data.get('password')
 
+        user = authenticate(self.request, username=username, password=password)
+
+        if user is not None:
+            print(f"User {username} authenticated successfully")  # add this line
+            login(self.request, user)
+        else:
+            print(f"Failed to authenticate user {username}")  # add this line
+
+        # This method is called when valid form data has been POSTed.
+        # It should return an HttpResponse.
+        response = super().form_valid(form)
+
+        # create token after user is logged in
+        token, created = Token.objects.get_or_create(user=self.request.user)
+
+        # create Registro instance
+        #Registro.objects.create(usuario=self.request.user, data_login=timezone.now())
+
+        # you can add the token to a cookie, or include it in the response body
+        response.set_cookie('auth_token', token.key)
+
+        return response
+    
+    def form_invalid(self, form):
+        print("Form is invalid")  # add this line
+        return super().form_invalid(form)
+    
+class CustomLogoutView(LogoutView):
+    def dispatch(self, request, *args, **kwargs):
+        # This method is called before the view is dispatched.
+        # It should return an HttpResponse.
+
+        # update Registro instance
+        registro = Registro.objects.filter(usuario=request.user).order_by('-data_login').first()
+        if registro:
+            registro.data_logout = timezone.now()
+            registro.save()
+
+        response = super().dispatch(request, *args, **kwargs)
+        return response
