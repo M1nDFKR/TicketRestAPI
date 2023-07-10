@@ -51,5 +51,4 @@ Thumbs.db
 
 # Ignore any other files or directories that are not necessary for version control
 TicketRestAPI/tickets/migrations/
-TicketRestAPI/tickets/migrations/0001_initial.py
 TicketRestAPI/tickets/migrations/0002_alter_ticket_date.py
