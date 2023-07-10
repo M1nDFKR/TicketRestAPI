@@ -154,3 +154,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MAIL_SERVER = "imap.gmail.com"
 MAIL_USERNAME = "prometonaoescam@gmail.com"
 MAIL_PASSWORD = "wmmcblxzxvcocuyz"
+
+
