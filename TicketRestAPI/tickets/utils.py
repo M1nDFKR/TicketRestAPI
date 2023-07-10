@@ -1,8 +1,8 @@
 import imapclient
+from datetime import datetime
+from email.utils import parsedate_to_datetime
 import email
 import re
-from email.utils import parsedate_to_datetime
-from datetime import datetime
 from django.conf import settings
 from .models import Ticket, TicketThread
 from email.header import decode_header
