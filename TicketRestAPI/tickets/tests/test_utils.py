@@ -12,7 +12,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from tickets.utils import get_emails
 from tickets.utils import fetch_and_process_emails, create_or_update_ticket
-import datetime
+from datetime import datetime
 
 
 # Classe de teste que herda de TestCase para realizar testes unitários
@@ -96,6 +96,7 @@ class GetBodyTest(TestCase):
 
 class GetEmailsTest(TestCase):
     @freeze_time("2023-07-07 12:00:00")
+    @mock.patch('tickets.utils.datetime')
     @mock.patch('tickets.utils.imapclient.IMAPClient')
     @mock.patch('tickets.utils.decode_header')
     @mock.patch('tickets.utils.get_body')
@@ -111,13 +112,17 @@ class GetEmailsTest(TestCase):
         }
         mock_email_message = mock.MagicMock()
         mock_email_message.get.return_value = 'Raw Subject'
-        mock_decode_header.return_value = [('Decoded Subject', 'utf-8')]
+        mock_decode_header.return_value = [
+            (freeze_time("2023-07-07 12:00:00").freeze().datetime, 'utf-8')]
         mock_get_body.return_value = 'Email Body'
 
         with mock.patch('tickets.utils.email.message_from_bytes', return_value=mock_email_message):
             emails = get_emails()
 
         # Check the interactions with the mock objects
+        mock_datetime = mock.datetime.datetime
+        mock_datetime.now.return_value = datetime.datetime(
+            2023, 7, 7, 12, 0, 0)
         mock_imapclient.assert_called_once_with(settings.MAIL_SERVER)
         mock_client.login.assert_called_once_with(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
         mock_client.select_folder.assert_called_once_with('INBOX')
