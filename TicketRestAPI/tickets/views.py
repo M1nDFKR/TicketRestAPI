@@ -26,6 +26,9 @@ from django.contrib.auth import authenticate, login
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 
 
 User = get_user_model()
@@ -58,8 +61,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer, mock_create):
-        mock_create.return_value = None  # Define um valor de retorno nulo para a função mock_create
+    def perform_create(self, serializer):
         serializer.save(user=self.request.user)  # Salva o objeto Comment criado pelo serializador associado ao usuário atual
 
     # Ação personalizada para excluir um comentário
@@ -73,11 +75,14 @@ def get_users(request):
     users = User.objects.all().values('id', 'username')  # Only get the id and username fields
     return JsonResponse(list(users), safe=False)
 
-@login_required
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def get_authenticated_user(request):
     user = request.user
     authenticated_user = {
         'username': user.username,
+        'id': user.id,
     }
     return JsonResponse(authenticated_user)
 

@@ -27,7 +27,7 @@ class Ticket(models.Model):
     title = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    date = models.DateTimeField()
+    date = models.DateTimeField(auto_now=True)
     STATUS_CHOICES = (
         ('A', 'Aberto'),
         ('F', 'Fechado'),
@@ -40,7 +40,6 @@ class Ticket(models.Model):
 
     def __str__(self):
         return self.title
-
 
 class Comment(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='comments')

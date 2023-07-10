@@ -84,6 +84,7 @@ def update_ticket_and_thread_status(ticket_instance, subject):
 
 def fetch_and_process_emails():
     # Obtém os e-mails, cria ou atualiza os tickets correspondentes e atualiza os status.
+    print("fetching emails...")
     emails = get_emails()
     for email_data in emails:
         title = email_data['subject']
