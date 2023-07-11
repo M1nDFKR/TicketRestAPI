@@ -9,7 +9,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from .models import Ticket, TicketThread, Comment, Registro
+from .models import Ticket, TicketThread, Comment, Registro, Attachment
 
 
 class CustomUserAdmin(UserAdmin):
@@ -123,4 +123,4 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(TicketThread, CustomTicketThreadAdmin)
-admin.site.register([Ticket, Comment, Registro])
+admin.site.register([Ticket, Comment, Registro, Attachment])

@@ -41,6 +41,13 @@ class Ticket(models.Model):
     def __str__(self):
         return self.title
 
+
+class Attachment(models.Model):
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='static/uploads')
+
+
 class Comment(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
