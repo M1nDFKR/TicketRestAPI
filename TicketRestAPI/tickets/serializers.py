@@ -24,7 +24,7 @@ class TicketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ticket
-        fields = ['id', 'thread', 'title', 'created_at', 'updated_at', 'status', 'code', 'files', 'body', 'comments']
+        fields = ['id', 'thread', 'title', 'date', 'created_at', 'updated_at', 'status', 'code', 'files', 'body', 'comments']
         # Define o modelo associado ao serializador como Ticket
         # Especifica os campos do modelo que serão serializados
 
