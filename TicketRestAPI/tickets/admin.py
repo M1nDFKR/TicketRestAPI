@@ -11,17 +11,25 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from .models import Ticket, TicketThread, Comment, Registro
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
+import os
+import tempfile
 
 class CustomUserAdmin(UserAdmin):
     actions = ['download_user_log_pdf']
 
     def download_user_log_pdf(self, request, queryset):
-        # Cria uma resposta HTTP para o arquivo PDF
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="user_log.pdf"'
+        # Obtém o usuário atual
+        user = request.user
+
+        # Obtém os nomes dos usuários selecionados
+        usernames = [user.username for user in queryset]
+
+        # Cria um arquivo temporário para armazenar o PDF
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        file_path = temp_file.name
 
         # Cria um objeto SimpleDocTemplate para gerar o PDF
-        doc = SimpleDocTemplate(response, pagesize=letter)
+        doc = SimpleDocTemplate(file_path, pagesize=letter)
         elements = []  # Lista para armazenar os elementos do PDF
 
         # Obtém os estilos padrão
@@ -81,6 +89,23 @@ class CustomUserAdmin(UserAdmin):
             elements.append(table)  # Adiciona a tabela ao PDF
 
         doc.build(elements)  # Gera o PDF com os elementos
+
+        # Lê o conteúdo do arquivo temporário
+        with open(file_path, 'rb') as f:
+            pdf_content = f.read()
+
+        # Fecha e exclui o arquivo temporário
+        temp_file.close()
+        os.remove(file_path)
+
+        # Define o nome do arquivo PDF com base nos nomes dos usuários
+        filename = "_".join(usernames) + "_log.pdf"
+
+        # Cria uma resposta HTTP com o conteúdo do PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response.write(pdf_content)
+
         return response
 
 class CustomTicketThreadAdmin(admin.ModelAdmin):
