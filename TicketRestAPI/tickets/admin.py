@@ -6,11 +6,11 @@ from django.http import HttpResponse
 from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from .models import Ticket, TicketThread, Comment, Registro
-
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
 
 class CustomUserAdmin(UserAdmin):
     actions = ['download_user_log_pdf']
@@ -24,11 +24,21 @@ class CustomUserAdmin(UserAdmin):
         doc = SimpleDocTemplate(response, pagesize=letter)
         elements = []  # Lista para armazenar os elementos do PDF
 
+        # Obtém os estilos padrão
+        styles = getSampleStyleSheet()
+
+        # Define o estilo personalizado para a cor verde
+        green_style = ParagraphStyle(
+            'green',
+            parent=styles['Normal'],
+            textColor=colors.green,
+            alignment=TA_CENTER
+        )
+
         for user in queryset:
             username = user.username
             login_info = f"Login/Logout Log for User: {username}"
 
-            styles = getSampleStyleSheet()
             title = Paragraph(login_info, styles['Title'])
             elements.append(title)  # Adiciona o título ao PDF
 
@@ -49,7 +59,11 @@ class CustomUserAdmin(UserAdmin):
                 minutes, seconds = divmod(remainder, 60)
                 login_duration = f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
 
-                data.append([login_date, logout_date, login_duration])
+                # Verifica se o registro de logout está vazio (ainda não fez logout) e destaca com a cor verde
+                if not registro.data_logout:
+                    data.append([Paragraph(login_date, green_style), Paragraph("Ativo", green_style), Paragraph("Ativo", green_style)])
+                else:
+                    data.append([login_date, logout_date, login_duration])
 
             table = Table(data, colWidths=[2.2*inch, 2.2*inch, 2.2*inch])
             table_style = TableStyle([
