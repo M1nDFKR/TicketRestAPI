@@ -1,60 +1,68 @@
 from unittest import mock
 from unittest.mock import patch, MagicMock
+from freezegun import freeze_time
+from datetime import datetime, timedelta
 from django.test import TestCase
 from django.conf import settings
-from tickets.utils import create_or_update_ticket
+from tickets.utils import create_or_update_ticket, fetch_and_process_emails, create_or_update_ticket, extract_code_from_subject
 from tickets.models import Ticket, TicketThread
-from freezegun import freeze_time
-from tickets.utils import extract_code_from_subject
 from tickets.utils import get_body
 from email.message import EmailMessage
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from tickets.utils import get_emails
-from tickets.utils import fetch_and_process_emails, create_or_update_ticket
-from datetime import datetime
 
 
 # Classe de teste que herda de TestCase para realizar testes unitários
 class CreateOrUpdateTicketTest(TestCase):
-
-    # Método de teste para a função create_or_update_ticket
-    @patch('tickets.utils.Ticket')  # Decorator para substituir a classe Ticket pelo mock
-    @patch('tickets.utils.TicketThread')  # Decorator para substituir a classe TicketThread pelo mock
+    @patch('tickets.utils.Ticket')
+    @patch('tickets.utils.TicketThread')
     def test_create_or_update_ticket(self, mock_ticket_thread, mock_ticket):
         # Mocks das instâncias de TicketThread e Ticket
-        mock_thread = mock.MagicMock()
-        mock_ticket_instance = mock.MagicMock()
+        mock_thread = MagicMock()
+        mock_ticket_instance = MagicMock()
 
         # Configuração dos retornos dos métodos get_or_create dos mocks
-        mock_ticket_thread.objects.get_or_create.return_value = (mock_thread, True)
-        mock_ticket.objects.get_or_create.return_value = (mock_ticket_instance, True)
+        mock_ticket_thread.objects.get_or_create.return_value = (
+            mock_thread, True)
+        mock_ticket.objects.get_or_create.return_value = (
+            mock_ticket_instance, True)
 
         # Dados de teste
         subject = "Test subject"
         body = "Test body"
         code = "Test code"
 
-        # Chamada da função create_or_update_ticket
-        current_datetime = datetime.now()
-        result = create_or_update_ticket(subject, body, code, current_datetime)
+        # Loop para criar 30 tickets com datas diferentes
+        for i in range(30):
+            with freeze_time(datetime.now() - timedelta(days=i)):
+                # irá retornar a data congelada, variando a cada iteração
+                current_datetime = datetime.now()
 
-        # Verificações dos métodos chamados nos mocks
-        mock_ticket_thread.objects.get_or_create.assert_called_once_with(thread_code=code)
-        mock_ticket.objects.get_or_create.assert_called_once_with(
-            code=code, date=current_datetime, defaults={
-                'title': subject, 'body': body, 'thread': mock_thread, 'date': current_datetime}
-        )
+                # Chamada da função create_or_update_ticket
+                result = create_or_update_ticket(
+                    subject, body, code, current_datetime)
 
+                # Verificações dos métodos chamados nos mocks
+                mock_ticket_thread.objects.get_or_create.assert_called_with(
+                    thread_code=code)
+                mock_ticket.objects.get_or_create.assert_called_with(
+                    code=code, date=current_datetime, defaults={
+                        'title': subject, 'body': body, 'thread': mock_thread, 'date': current_datetime}
+                )
 
-        # Verificação do resultado retornado pela função
-        self.assertEqual(result, mock_ticket_instance)
+                # Verificação do resultado retornado pela função
+                self.assertEqual(result, mock_ticket_instance)
 
-        # Verificações adicionais se get_or_create retornar False
-        if not mock_ticket.objects.get_or_create.return_value[1]:
-            self.assertEqual(result.title, subject)
-            self.assertEqual(result.body, body)
-            self.assertEqual(result.thread, mock_thread)
+                # Verificações adicionais se get_or_create retornar False
+                if not mock_ticket.objects.get_or_create.return_value[1]:
+                    self.assertEqual(result.title, subject)
+                    self.assertEqual(result.body, body)
+                    self.assertEqual(result.thread, mock_thread)
+
+                # Reset mocks after each iteration
+                mock_ticket.reset_mock()
+                mock_ticket_thread.reset_mock()
 
 
 class ExtractCodeTest(TestCase):
@@ -95,8 +103,7 @@ class GetBodyTest(TestCase):
 
 
 class GetEmailsTest(TestCase):
-    @freeze_time("2023-07-07 12:00:00")
-    @mock.patch('tickets.utils.datetime')
+
     @mock.patch('tickets.utils.imapclient.IMAPClient')
     @mock.patch('tickets.utils.decode_header')
     @mock.patch('tickets.utils.get_body')
@@ -110,31 +117,42 @@ class GetEmailsTest(TestCase):
             'msgid1': {b'BODY[]': 'raw_email_1'},
             'msgid2': {b'BODY[]': 'raw_email_2'},
         }
+
         mock_email_message = mock.MagicMock()
-        mock_email_message.get.return_value = 'Raw Subject'
-        mock_decode_header.return_value = [
-            (freeze_time("2023-07-07 12:00:00").freeze().datetime, 'utf-8')]
+
+        def get_side_effect(arg, default=None):
+            if arg == 'Subject':
+                return 'Raw Subject'
+            elif arg == 'Date':
+                return 'Fri, 07 Jul 2023 12:00:00 -0000'
+        mock_email_message.get.side_effect = get_side_effect
+
+        mock_decode_header.return_value = [('Decoded Subject', 'utf-8')]
         mock_get_body.return_value = 'Email Body'
 
         with mock.patch('tickets.utils.email.message_from_bytes', return_value=mock_email_message):
             emails = get_emails()
 
         # Check the interactions with the mock objects
-        mock_datetime = mock.datetime.datetime
-        mock_datetime.now.return_value = datetime.datetime(
-            2023, 7, 7, 12, 0, 0)
         mock_imapclient.assert_called_once_with(settings.MAIL_SERVER)
-        mock_client.login.assert_called_once_with(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+        mock_client.login.assert_called_once_with(
+            settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
         mock_client.select_folder.assert_called_once_with('INBOX')
-        mock_client.search.assert_called_once_with(['FROM', "noreply.escoladigital@min-educ.pt"])
-        mock_client.fetch.assert_called_once_with(['msgid1', 'msgid2'], ['BODY[]'])
-        mock_decode_header.assert_has_calls([mock.call('Raw Subject'), mock.call('Raw Subject')])
-        mock_get_body.assert_has_calls([mock.call(mock_email_message), mock.call(mock_email_message)])
+        mock_client.search.assert_called_once_with(
+            ['FROM', "noreply.escoladigital@min-educ.pt"])
+        mock_client.fetch.assert_called_once_with(
+            ['msgid1', 'msgid2'], ['BODY[]'])
+        mock_decode_header.assert_has_calls(
+            [mock.call('Raw Subject'), mock.call('Raw Subject')])
+        mock_get_body.assert_has_calls(
+            [mock.call(mock_email_message), mock.call(mock_email_message)])
 
         # Check the returned value
         expected_emails = [
-            {'subject': 'Decoded Subject', 'body': 'Email Body'},
-            {'subject': 'Decoded Subject', 'body': 'Email Body'},
+            {'subject': 'Decoded Subject', 'body': 'Email Body',
+                'date': datetime(2023, 7, 7, 12, 0)},
+            {'subject': 'Decoded Subject', 'body': 'Email Body',
+                'date': datetime(2023, 7, 7, 12, 0)},
         ]
         self.assertEqual(emails, expected_emails)
 
@@ -166,9 +184,14 @@ class TestUtils(TestCase):
         assert mock_imapclient.fetch.called
 
     def test_create_or_update_ticket(self):
-        subject = "[ABC123] Ticket details"
-        body = "Hello, this is a test"
-        code = "ABC123"
-        current_datetime = datetime.now()  # provide current date and time
-        ticket_instance = create_or_update_ticket(
-            subject, body, code, current_datetime)
+        # Loop para criar tickets com datas diferentes
+        for i, email in enumerate(self.emails):
+            with freeze_time(datetime.now() - timedelta(days=i)):
+                # Irá retornar a data congelada, variando a cada iteração
+                current_datetime = datetime.now()
+                subject = email['subject']
+                body = email['body']
+                code = subject.split(' ')[1].strip(
+                    '[]')  # Extraindo o código do assunto
+                ticket_instance = create_or_update_ticket(
+                    subject, body, code, current_datetime)
