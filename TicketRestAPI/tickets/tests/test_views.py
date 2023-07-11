@@ -5,8 +5,8 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from tickets.factories import TicketThreadFactory, TicketFactory
 from unittest.mock import patch
-from tickets.models import TicketThread
-from datetime import datetime
+from tickets.models import TicketThread, Ticket
+from datetime import datetime, date
 
 import django
 django.setup()
@@ -168,7 +168,7 @@ class TicketViewSetTestCase(APITestCase):
             'title': 'Test Ticket',
             'code': 'TST0001',
             'status': 'A',
-            'date': datetime.date.now(),
+            'date': date.today().isoformat(),
             'body': 'Test Ticket Body',
         }
         response = self.client.post(reverse('ticket-list'), data)
