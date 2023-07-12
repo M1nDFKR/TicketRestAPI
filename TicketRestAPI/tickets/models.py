@@ -47,7 +47,7 @@ class Attachment(models.Model):
         Ticket, on_delete=models.CASCADE, related_name='attachments')
     hash = models.CharField(max_length=32)
     file = models.FileField(upload_to='uploads')
-
+ 
 
 class Comment(models.Model):
     ticket = models.ForeignKey(

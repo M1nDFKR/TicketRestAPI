@@ -54,11 +54,9 @@ TicketRestAPI/tickets/migrations/
 icketRestAPI/tickets/migrations/0001_initial.py
 TicketRestAPI/tickets/migrations/0002_alter_ticket_date.py
 TicketRestAPI/static/uploads/
-<<<<<<< HEAD
 TicketRestAPI/tickets/migrations/0001_initial.py
 TicketRestAPI/tickets/migrations/0001_initial.py
 TicketRestAPI/tickets/migrations/0001_initial.py
-=======
 TicketRestAPI/media/uploads/admin_log_0hmUBTR.pdf
 TicketRestAPI/media/uploads/admin_log_7fmIhMJ.pdf
 TicketRestAPI/media/uploads/admin_log_AvYty6M.pdf
@@ -123,4 +121,3 @@ TicketRestAPI/media/uploads/simao_log_WkOVr14.pdf
 TicketRestAPI/media/uploads/simao_log_xDDWo3w.pdf
 TicketRestAPI/media/uploads/simao_log_xIZcBLS.pdf
 TicketRestAPI/media/uploads/simao_log.pdf
->>>>>>> 1460eecf2e9a5abd087888c2953e8f3160bb0ec3
