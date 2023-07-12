@@ -61,22 +61,6 @@ def get_body(email_message):
         body = email_message.get_payload(decode=True)
     return body.decode('utf-8')
 
-# def get_body(email_message):
-#     # Extrai o corpo de um e-mail.
-#     # Se o e-mail for multipart, retorna o corpo da parte 'text/html', se disponível.
-#     # Caso contrário, retorna a parte 'text/plain' ou o corpo do próprio e-mail.
-#     body_html = None
-#     body_plain = None
-
-#     if email_message.is_multipart():
-#         for part in email_message.walk():
-#             if part.get_content_type() == 'text/html' and part.get('Content-Disposition') is None:
-#                 body = part.get_payload(decode=True)
-#                 break
-#             if part.get_content_type() == 'text/plain' and part.get('Content-Disposition') is None:
-#                 body = part.get_payload(decode=True)
-#     else:
-#         return email_message.get_payload(decode=True).decode('utf-8')
 
 
 def extract_code_from_subject(subject):
