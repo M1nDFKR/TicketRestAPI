@@ -45,7 +45,7 @@ class Ticket(models.Model):
 class Attachment(models.Model):
     ticket = models.ForeignKey(
         Ticket, on_delete=models.CASCADE, related_name='attachments')
-    file = models.FileField(upload_to='static/uploads')
+    file = models.FileField(upload_to='uploads')
 
 
 class Comment(models.Model):
