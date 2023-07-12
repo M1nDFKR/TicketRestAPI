@@ -8,7 +8,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from .models import Ticket, TicketThread, Comment, Registro, Attachment
+from .models import Ticket, TicketThread, Comment, Registro
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 import os
@@ -109,7 +109,8 @@ class CustomUserAdmin(UserAdmin):
         return response
 
 class CustomTicketThreadAdmin(admin.ModelAdmin):
-    actions = ['download_ticket_thread_pdf']
+    actions = ['download_ticket_thread_pdf', 'body_ticket']
+    list_display = ['thread_code']
 
     def download_ticket_thread_pdf(self, request, queryset):
         # Cria uma resposta HTTP para o arquivo PDF
@@ -157,9 +158,50 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
 
         doc.build(elements)  # Gera o PDF com os elementos
         return response
+    
+    def body_ticket(self, request, queryset):
+        # Cria uma resposta HTTP para o arquivo PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="user_ticket_body.pdf"'
+
+        # Cria um objeto SimpleDocTemplate para gerar o PDF
+        doc = SimpleDocTemplate(response, pagesize=letter)
+        elements = []  # Lista para armazenar os elementos do PDF
+
+        for thread in queryset:
+            thread_code = thread.thread_code  # Use o campo thread_code como o nome da thread
+            ticket_info = f"Ticket thread: {thread_code}"
+
+            styles = getSampleStyleSheet()
+            title = Paragraph(ticket_info, styles['Title'])
+            elements.append(title)  # Adiciona o título ao PDF
+
+            # Recupera os tickets da thread e cria a tabela de dados
+            tickets = thread.tickets.all()
+            data = [['Body']]
+            for ticket in tickets:
+                data.append([ticket.body.strip()])  # Remove os espaços em branco no início e no final do texto
+
+            table = Table(data, colWidths=[8.5*inch])  # Ajuste a largura das colunas conforme necessário
+            table_style = TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6495ED')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ])
+            table.setStyle(table_style)  # Aplica o estilo à tabela
+
+            elements.append(table)  # Adiciona a tabela ao PDF
+
+        doc.build(elements)  # Gera o PDF com os elementos
+        return response
 
 
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(TicketThread, CustomTicketThreadAdmin)
-admin.site.register([Ticket, Comment, Registro, Attachment])
+admin.site.register([Ticket, Comment, Registro])

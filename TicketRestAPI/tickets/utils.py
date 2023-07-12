@@ -58,12 +58,11 @@ def get_body(email_message):
         for part in email_message.walk():
             if part.get_content_type() == 'text/html' and part.get('Content-Disposition') is None:
                 body = part.get_payload(decode=True)
-                break
-            if part.get_content_type() == 'text/plain' and part.get('Content-Disposition') is None:
-                body = part.get_payload(decode=True)
+                break 
     else:
         body = email_message.get_payload(decode=True)
     return body.decode('utf-8')
+
 
 
 def extract_code_from_subject(subject):
@@ -131,8 +130,8 @@ def save_attachments(email_message, code):
 
                 file_path = os.path.join(tempfile.gettempdir(), new_file_name)
                 with open(file_path, 'wb') as f:
-                    f.write(part.get_payload(decode=True))
-                attachments.append(file_path)
+                    f.write(file_data)
+                attachments.append({'filename': file_name, 'path': file_path}) 
 
     return attachments
 
