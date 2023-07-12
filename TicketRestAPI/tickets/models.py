@@ -6,6 +6,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.contrib.auth.signals import user_logged_out
 
+
 class TicketThread(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -44,12 +45,13 @@ class Ticket(models.Model):
 class Attachment(models.Model):
     ticket = models.ForeignKey(
         Ticket, on_delete=models.CASCADE, related_name='attachments')
+    hash = models.CharField(max_length=32)
     file = models.FileField(upload_to='uploads')
-    hash = models.CharField(max_length=32)  # assuming MD5 hash is used
 
 
 class Comment(models.Model):
-    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='comments')
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -57,16 +59,20 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.ticket.title} - {self.user.username}"
-    
+
+
 class Registro(models.Model):
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='registros')
+    usuario = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='registros')
     data_login = models.DateTimeField()
     data_logout = models.DateTimeField(null=True, blank=True)
-    
+
     def __str__(self):
         return f"Registro {self.pk}"
 
 # signal handler function
+
+
 @receiver(user_logged_in)
 def create_registro(sender, request, user, **kwargs):
     print("create_registro is called.")
@@ -76,7 +82,8 @@ def create_registro(sender, request, user, **kwargs):
 @receiver(user_logged_out)
 def update_registro(sender, request, user, **kwargs):
     print("update_registro is called.")
-    registro = Registro.objects.filter(usuario=user).order_by('-data_login').first()
+    registro = Registro.objects.filter(
+        usuario=user).order_by('-data_login').first()
     if registro:
         registro.data_logout = timezone.now()
         registro.save()
