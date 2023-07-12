@@ -40,6 +40,15 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='Registro',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('data_login', models.DateTimeField()),
+                ('data_logout', models.DateTimeField(blank=True, null=True)),
+                ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='registros', to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
             name='Comment',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

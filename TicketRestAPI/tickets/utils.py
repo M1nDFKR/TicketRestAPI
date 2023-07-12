@@ -21,9 +21,9 @@ def get_emails():
 
     client.select_folder('INBOX')
 
-    # messages = client.search(['FROM', "noreply.escoladigital@min-educ.pt"])
+    messages = client.search(['FROM', "noreply.escoladigital@min-educ.pt"])
 
-    messages = client.search(['FROM', "simaosousasms2006@gmail.com"])
+    # messages = client.search(['FROM', "simaosousasms2006@gmail.com"])
 
     response = client.fetch(messages, ['BODY[]'])
 
@@ -71,17 +71,10 @@ def get_body(email_message):
     if email_message.is_multipart():
         for part in email_message.walk():
             if part.get_content_type() == 'text/html' and part.get('Content-Disposition') is None:
-                body_html = part.get_payload(decode=True)
-                break 
-            elif part.get_content_type() == 'text/plain' and part.get('Content-Disposition') is None:
-                body_plain = part.get_payload(decode=True)
-
-        if body_html:
-            return body_html.decode('utf-8')
-        elif body_plain:
-            return body_plain.decode('utf-8')
-        else:
-            return None
+                body = part.get_payload(decode=True)
+                break
+            if part.get_content_type() == 'text/plain' and part.get('Content-Disposition') is None:
+                body = part.get_payload(decode=True)
     else:
         return email_message.get_payload(decode=True).decode('utf-8')
 
