@@ -35,7 +35,6 @@ class Ticket(models.Model):
     status = models.CharField(
         max_length=1, choices=STATUS_CHOICES, default='A')
     code = models.CharField(max_length=14)
-    files = models.FileField(upload_to='static/uploads', blank=True)
     body = models.TextField(blank=True)
 
     def __str__(self):

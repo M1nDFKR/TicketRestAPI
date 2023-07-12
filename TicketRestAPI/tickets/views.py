@@ -1,35 +1,22 @@
 from rest_framework import viewsets, permissions, status
-from django.contrib.auth import user_logged_in
-from django.contrib.auth import user_logged_out
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from .models import TicketThread, Ticket, Comment
+from .models import TicketThread, Ticket, Comment, Attachment, Registro
 from .serializers import TicketThreadSerializer, TicketSerializer, CommentSerializer
 from .utils import fetch_and_process_emails
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.views import LoginView , LogoutView
-from rest_framework.authtoken.models import Token
-from django.http import FileResponse
-from django.views.generic import View
-from reportlab.pdfgen import canvas
-from io import BytesIO
-from datetime import datetime
-from django.utils import timezone
-from .models import Registro
 from django.contrib.auth.models import User
-from django.http import JsonResponse
-from rest_framework.authtoken.views import ObtainAuthToken
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator  
-from django.contrib.auth import authenticate, login
-from rest_framework.views import APIView
-from rest_framework.authentication import TokenAuthentication
-from django.contrib.auth.decorators import login_required
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.views import APIView
+from django.http import JsonResponse
+from django.contrib.auth import user_logged_in
+from django.contrib.auth import user_logged_out
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
 
 User = get_user_model()
 
