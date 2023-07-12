@@ -9,6 +9,7 @@ from .models import Ticket, TicketThread, Attachment
 from email.header import decode_header
 from django.core.files import File
 import tempfile
+import base64
 
 
 def get_emails():
@@ -55,12 +56,27 @@ def get_body(email_message):
         for part in email_message.walk():
             if part.get_content_type() == 'text/html' and part.get('Content-Disposition') is None:
                 body = part.get_payload(decode=True)
-                break
-            if part.get_content_type() == 'text/plain' and part.get('Content-Disposition') is None:
-                body = part.get_payload(decode=True)
+                break 
     else:
         body = email_message.get_payload(decode=True)
     return body.decode('utf-8')
+
+# def get_body(email_message):
+#     # Extrai o corpo de um e-mail.
+#     # Se o e-mail for multipart, retorna o corpo da parte 'text/html', se disponível.
+#     # Caso contrário, retorna a parte 'text/plain' ou o corpo do próprio e-mail.
+#     body_html = None
+#     body_plain = None
+
+#     if email_message.is_multipart():
+#         for part in email_message.walk():
+#             if part.get_content_type() == 'text/html' and part.get('Content-Disposition') is None:
+#                 body = part.get_payload(decode=True)
+#                 break
+#             if part.get_content_type() == 'text/plain' and part.get('Content-Disposition') is None:
+#                 body = part.get_payload(decode=True)
+#     else:
+#         return email_message.get_payload(decode=True).decode('utf-8')
 
 
 def extract_code_from_subject(subject):
@@ -121,10 +137,11 @@ def save_attachments(email_message):
             file_name = part.get_filename()
 
             if bool(file_name):
+                file_data = part.get_payload(decode=True)
                 file_path = os.path.join(tempfile.gettempdir(), file_name)
                 with open(file_path, 'wb') as f:
-                    f.write(part.get_payload(decode=True))
-                attachments.append(file_path)
+                    f.write(file_data)
+                attachments.append({'filename': file_name, 'path': file_path}) 
 
     return attachments
 
@@ -152,10 +169,10 @@ def fetch_and_process_emails():
 
         # add this block here to handle file attachments
         for attachment in attachments:
-            with open(attachment, 'rb') as f:
+            with open(attachment['path'], 'rb') as f:  # note the use of 'path' here
                 att_instance = Attachment(ticket=ticket_instance)
-                att_instance.file.save(os.path.basename(attachment), File(f))
+                att_instance.file.save(os.path.basename(attachment['path']), File(f))  # note the use of 'path' here
                 att_instance.save()
-            os.remove(attachment)  # delete file after uploading
+            os.remove(attachment['path'])  # note the use of 'path' here. delete file after uploading
 
         update_ticket_and_thread_status(ticket_instance, title)
