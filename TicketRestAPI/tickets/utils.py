@@ -130,7 +130,7 @@ def save_attachments(email_message, code):
 
                 file_path = os.path.join(tempfile.gettempdir(), new_file_name)
                 with open(file_path, 'wb') as f:
-                    f.write(file_data)
+                    f.write(part.get_payload(decode=True))
                 attachments.append({'filename': file_name, 'path': file_path}) 
 
     return attachments
