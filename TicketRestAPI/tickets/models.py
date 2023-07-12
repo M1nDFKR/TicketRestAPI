@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db import models
-import re
-
+from django.contrib.auth.signals import user_logged_in
+from django.dispatch import receiver
+from django.utils import timezone
+from django.contrib.auth.signals import user_logged_out
 
 class TicketThread(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -25,7 +27,7 @@ class Ticket(models.Model):
     title = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    date = models.DateTimeField(auto_now=True)
+    date = models.DateTimeField(null=True)
     STATUS_CHOICES = (
         ('A', 'Aberto'),
         ('F', 'Fechado'),
@@ -33,11 +35,16 @@ class Ticket(models.Model):
     status = models.CharField(
         max_length=1, choices=STATUS_CHOICES, default='A')
     code = models.CharField(max_length=14)
-    files = models.FileField(upload_to='static/uploads', blank=True)
     body = models.TextField(blank=True)
 
     def __str__(self):
         return self.title
+
+
+class Attachment(models.Model):
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='static/uploads')
 
 
 class Comment(models.Model):
@@ -57,3 +64,18 @@ class Registro(models.Model):
     
     def __str__(self):
         return f"Registro {self.pk}"
+
+# signal handler function
+@receiver(user_logged_in)
+def create_registro(sender, request, user, **kwargs):
+    print("create_registro is called.")
+    Registro.objects.create(usuario=user, data_login=timezone.now())
+
+
+@receiver(user_logged_out)
+def update_registro(sender, request, user, **kwargs):
+    print("update_registro is called.")
+    registro = Registro.objects.filter(usuario=user).order_by('-data_login').first()
+    if registro:
+        registro.data_logout = timezone.now()
+        registro.save()

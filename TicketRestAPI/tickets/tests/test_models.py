@@ -20,7 +20,8 @@ class TicketTest(TestCase):
         self.ticket = Ticket.objects.create(
             title="Test Ticket",
             code="Test Code",
-            thread=self.ticket_thread
+            thread=self.ticket_thread,
+            date="2023-01-01"  # Adicione uma data de exemplo para o teste
         )
 
     def test_ticket_creation(self):
@@ -38,6 +39,7 @@ class TicketTest(TestCase):
     def test_ticket_code(self):
         self.assertEqual(self.ticket.code, "Test Code")
 
+
 class CommentTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -49,7 +51,8 @@ class CommentTest(TestCase):
         self.ticket = Ticket.objects.create(
             title="Test Ticket",
             code="Test Code",
-            thread=self.ticket_thread
+            thread=self.ticket_thread,
+            date="2023-01-01"  # Adicione uma data de exemplo para o teste
         )
         self.comment = Comment.objects.create(
             ticket=self.ticket,

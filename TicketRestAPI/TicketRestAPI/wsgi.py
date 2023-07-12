@@ -14,3 +14,6 @@ from django.core.wsgi import get_wsgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'TicketRestAPI.settings')
 
 application = get_wsgi_application()
+
+# Start the scheduler after the application is ready.
+from tickets.scheduler import scheduler
