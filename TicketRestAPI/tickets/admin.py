@@ -8,11 +8,12 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from .models import Ticket, TicketThread, Comment, Registro
+from .models import Ticket, TicketThread, Comment, Registro, Attachment
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 import os
 import tempfile
+import ftfy
 
 class CustomUserAdmin(UserAdmin):
     actions = ['download_user_log_pdf']
@@ -109,10 +110,10 @@ class CustomUserAdmin(UserAdmin):
         return response
 
 class CustomTicketThreadAdmin(admin.ModelAdmin):
-    actions = ['download_ticket_thread_pdf', 'body_ticket']
+    actions = ['Thread_Info', 'Body_Tickets']
     list_display = ['thread_code']
 
-    def download_ticket_thread_pdf(self, request, queryset):
+    def Thread_Info(self, request, queryset):
         # Cria uma resposta HTTP para o arquivo PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="user_ticket_thread.pdf"'
@@ -159,7 +160,7 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
         doc.build(elements)  # Gera o PDF com os elementos
         return response
     
-    def body_ticket(self, request, queryset):
+    def Body_Tickets(self, request, queryset):
         # Cria uma resposta HTTP para o arquivo PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="user_ticket_body.pdf"'
@@ -180,7 +181,9 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
             tickets = thread.tickets.all()
             data = [['Body']]
             for ticket in tickets:
-                data.append([ticket.body.strip()])  # Remove os espaços em branco no início e no final do texto
+                    ticket_body = ticket.body.strip()  
+                    ticket_body = ftfy.fix_text(ticket_body)
+                    data.append([ticket_body])
 
             table = Table(data, colWidths=[8.5*inch])  # Ajuste a largura das colunas conforme necessário
             table_style = TableStyle([
@@ -189,7 +192,7 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, 0), 12),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (15, 0), (10, 0), 0),
                 ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ])
@@ -204,4 +207,4 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(TicketThread, CustomTicketThreadAdmin)
-admin.site.register([Ticket, Comment, Registro])
+admin.site.register([Ticket, Comment, Registro, Attachment])
