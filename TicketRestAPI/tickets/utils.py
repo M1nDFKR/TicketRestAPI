@@ -9,6 +9,7 @@ from .models import Ticket, TicketThread, Attachment
 from email.header import decode_header
 from django.core.files import File
 import tempfile
+import hashlib
 
 
 def get_emails():
@@ -20,9 +21,9 @@ def get_emails():
 
     client.select_folder('INBOX')
 
-    messages = client.search(['FROM', "noreply.escoladigital@min-educ.pt"])
+    # messages = client.search(['FROM', "noreply.escoladigital@min-educ.pt"])
 
-    # messages = client.search(['FROM', "simaosousasms2006@gmail.com"])
+    messages = client.search(['FROM', "simaosousasms2006@gmail.com"])
 
     response = client.fetch(messages, ['BODY[]'])
 
@@ -39,7 +40,9 @@ def get_emails():
         date_str = email_message.get('Date', None)
         date = parsedate_to_datetime(date_str)
 
-        attachments = save_attachments(email_message)
+        code = extract_code_from_subject(subject)
+
+        attachments = save_attachments(email_message, code)
 
         emails.append({'subject': subject, 'body': body,
                       'date': date, 'attachments': attachments})
@@ -107,12 +110,10 @@ def update_ticket_and_thread_status(ticket_instance, subject):
         thread.save()
 
 
-def save_attachments(email_message):
+def save_attachments(email_message, code):
     attachments = []
     if email_message.is_multipart():
-        # iterate over email parts
         for part in email_message.walk():
-            # this part comes from the text/plain part of the email
             if part.get_content_maintype() == 'multipart':
                 continue
             if part.get('Content-Disposition') is None:
@@ -121,7 +122,14 @@ def save_attachments(email_message):
             file_name = part.get_filename()
 
             if bool(file_name):
-                file_path = os.path.join(tempfile.gettempdir(), file_name)
+                base_name, ext = os.path.splitext(file_name)
+                counter = 1
+                new_file_name = f"{base_name}_{code}{ext}"
+                while os.path.exists(os.path.join(tempfile.gettempdir(), new_file_name)):
+                    new_file_name = f"{base_name}_{code}({counter}){ext}"
+                    counter += 1
+
+                file_path = os.path.join(tempfile.gettempdir(), new_file_name)
                 with open(file_path, 'wb') as f:
                     f.write(part.get_payload(decode=True))
                 attachments.append(file_path)
@@ -130,7 +138,6 @@ def save_attachments(email_message):
 
 
 def fetch_and_process_emails():
-    # Obtém os e-mails, cria ou atualiza os tickets correspondentes e atualiza os status.
     print("fetching emails...")
     emails = get_emails()
     for email_data in emails:
@@ -139,9 +146,7 @@ def fetch_and_process_emails():
         title = email_data['subject']
         body = email_data['body']
         code = extract_code_from_subject(title)
-        # get the date from the email data
         date = email_data['date']
-        # get the attachments from the email data
         attachments = email_data.get('attachments', [])
 
         if code is None:
@@ -150,12 +155,24 @@ def fetch_and_process_emails():
         ticket_instance = create_or_update_ticket(title, body, code, date)
         print(ticket_instance)
 
-        # add this block here to handle file attachments
         for attachment in attachments:
-            with open(attachment, 'rb') as f:
-                att_instance = Attachment(ticket=ticket_instance)
-                att_instance.file.save(os.path.basename(attachment), File(f))
-                att_instance.save()
-            os.remove(attachment)  # delete file after uploading
+            with open(attachment['path'], 'rb') as f:
+                content = f.read()
+                # create a hash of the file content
+                content_hash = hashlib.md5(content).hexdigest()
+
+                # check if a file with the same hash already exists
+                try:
+                    existing_attachment = Attachment.objects.get(
+                        hash=content_hash)
+                except Attachment.DoesNotExist:
+                    # if it doesn't exist, save the file and its hash
+                    att_instance = Attachment(
+                        ticket=ticket_instance, hash=content_hash)
+                    att_instance.file.save(
+                        os.path.basename(attachment['path']), File(f))
+                    att_instance.save()
+
+            os.remove(attachment['path'])
 
         update_ticket_and_thread_status(ticket_instance, title)
