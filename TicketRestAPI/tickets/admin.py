@@ -14,6 +14,8 @@ from reportlab.lib.enums import TA_CENTER
 import os
 import tempfile
 import ftfy
+from reportlab.platypus import Paragraph
+
 
 class CustomUserAdmin(UserAdmin):
     actions = ['download_user_log_pdf']
@@ -70,7 +72,8 @@ class CustomUserAdmin(UserAdmin):
 
                 # Verifica se o registro de logout está vazio (ainda não fez logout) e destaca com a cor verde
                 if not registro.data_logout:
-                    data.append([Paragraph(login_date, green_style), Paragraph("Ativo", green_style), Paragraph("Ativo", green_style)])
+                    data.append([Paragraph(login_date, green_style), Paragraph(
+                        "Ativo", green_style), Paragraph("Ativo", green_style)])
                 else:
                     data.append([login_date, logout_date, login_duration])
 
@@ -109,6 +112,7 @@ class CustomUserAdmin(UserAdmin):
 
         return response
 
+
 class CustomTicketThreadAdmin(admin.ModelAdmin):
     actions = ['download_ticket_thread_pdf', 'body_ticket']
     list_display = ['thread_code']
@@ -135,14 +139,19 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
             data = [['ID', 'Data', 'Hora', 'Status']]
             for ticket in tickets:
                 ticket_id = ticket.id
-                date = ticket.date + timedelta(days=1)  # Adicione um timedelta para ajustar a data conforme necessário
-                created_at = date.strftime('%Y-%m-%d')  # Formate a data como string
-                created_time = date.strftime('%H:%M:%S')  # Formate a hora como string
+                # Adicione um timedelta para ajustar a data conforme necessário
+                date = ticket.date + timedelta(days=1)
+                # Formate a data como string
+                created_at = date.strftime('%Y-%m-%d')
+                # Formate a hora como string
+                created_time = date.strftime('%H:%M:%S')
                 status = ticket.status
 
-                data.append([str(ticket_id), created_at, created_time, status])  # Converta o ticket_id para uma string
+                # Converta o ticket_id para uma string
+                data.append([str(ticket_id), created_at, created_time, status])
 
-            table = Table(data, colWidths=[1*inch, 1.5*inch, 1*inch, 1*inch])  # Ajuste a largura das colunas conforme necessário
+            # Ajuste a largura das colunas conforme necessário
+            table = Table(data, colWidths=[1*inch, 1.5*inch, 1*inch, 1*inch])
             table_style = TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6495ED')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -159,8 +168,8 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
 
         doc.build(elements)  # Gera o PDF com os elementos
         return response
-    
-    def body_ticket(self, request, queryset):
+
+    def Body_Tickets(self, request, queryset):
         # Cria uma resposta HTTP para o arquivo PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="user_ticket_body.pdf"'
@@ -169,11 +178,13 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
         doc = SimpleDocTemplate(response, pagesize=letter)
         elements = []  # Lista para armazenar os elementos do PDF
 
+        styles = getSampleStyleSheet()
+        body_style = styles["BodyText"]
+
         for thread in queryset:
             thread_code = thread.thread_code  # Use o campo thread_code como o nome da thread
             ticket_info = f"Ticket thread: {thread_code}"
 
-            styles = getSampleStyleSheet()
             title = Paragraph(ticket_info, styles['Title'])
             elements.append(title)  # Adiciona o título ao PDF
 
@@ -181,11 +192,14 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
             tickets = thread.tickets.all()
             data = [['Body']]
             for ticket in tickets:
-                    ticket_body = ticket.body.strip()  
-                    ticket_body = ftfy.fix_text(ticket_body)
-                    data.append([ticket_body])
+                ticket_body = ticket.body
+                ticket_body = ftfy.fix_text(ticket_body)
+                ticket_body = ticket_body.replace('\n', '<br/>')
+                ticket_body_paragraph = Paragraph(ticket_body, body_style)
+                data.append([ticket_body_paragraph])
 
-            table = Table(data, colWidths=[8.5*inch])  # Ajuste a largura das colunas conforme necessário
+            # Ajuste a largura das colunas conforme necessário
+            table = Table(data, colWidths=[8.5*inch])
             table_style = TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6495ED')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),

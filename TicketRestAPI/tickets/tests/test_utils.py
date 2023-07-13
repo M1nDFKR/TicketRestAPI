@@ -83,14 +83,14 @@ class GetBodyTest(TestCase):
     def test_get_body_for_multipart_message(self):
         # Criar uma mensagem de e-mail multipart
         msg = MIMEMultipart()
-        body_part = MIMEText("This is the main content", 'plain')
+        body_part = MIMEText("<p>This is the main content</p>", 'html')
         msg.attach(body_part)
         attachment_part = MIMEText("This is an attachment", 'plain')
         msg.attach(attachment_part)
 
         # Testar a função get_body
         body = get_body(msg)
-        self.assertEqual(body, "This is the main content")
+        self.assertEqual(body, "<p>This is the main content</p>")
 
     def test_get_body_for_singlepart_message(self):
         # Criar uma mensagem de e-mail singlepart
@@ -150,10 +150,11 @@ class GetEmailsTest(TestCase):
         # Check the returned value
         expected_emails = [
             {'subject': 'Decoded Subject', 'body': 'Email Body',
-                'date': datetime(2023, 7, 7, 12, 0)},
+                'date': datetime(2023, 7, 7, 12, 0), 'attachments': []},
             {'subject': 'Decoded Subject', 'body': 'Email Body',
-                'date': datetime(2023, 7, 7, 12, 0)},
+                'date': datetime(2023, 7, 7, 12, 0), 'attachments': []},
         ]
+
         self.assertEqual(emails, expected_emails)
 
 
