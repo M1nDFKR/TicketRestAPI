@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
-from tickets.models import Comment, Ticket, TicketThread
+from tickets.models import Comment, Ticket, TicketThread, Attachment
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 class TicketThreadTest(TestCase):
@@ -71,3 +72,32 @@ class CommentTest(TestCase):
 
     def test_comment_ticket(self):
         self.assertEqual(self.comment.ticket, self.ticket)
+
+
+class AttachmentTest(TestCase):
+    def setUp(self):
+        self.ticket_thread = TicketThread.objects.create()
+        self.ticket = Ticket.objects.create(
+            title="Test Ticket",
+            code="Test Code",
+            thread=self.ticket_thread,
+            date="2023-01-01"
+        )
+        self.file_mock = SimpleUploadedFile('file.txt', b"file_content")
+        self.attachment = Attachment.objects.create(
+            ticket=self.ticket,
+            hash="TestHash",
+            file=self.file_mock
+        )
+
+    def test_attachment_creation(self):
+        self.assertIsInstance(self.attachment, Attachment)
+
+    def test_attachment_hash(self):
+        self.assertEqual(self.attachment.hash, "TestHash")
+
+    def test_attachment_ticket(self):
+        self.assertEqual(self.attachment.ticket, self.ticket)
+
+    def test_attachment_file(self):
+        self.assertEqual(self.attachment.file.read(), b"file_content")

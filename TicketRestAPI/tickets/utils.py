@@ -21,9 +21,9 @@ def get_emails():
 
     client.select_folder('INBOX')
 
-    # messages = client.search(['FROM', "noreply.escoladigital@min-educ.pt"])
+    messages = client.search(['FROM', "noreply.escoladigital@min-educ.pt"])
 
-    messages = client.search(['FROM', "simaosousasms2006@gmail.com"])
+    # messages = client.search(['FROM', "simaosousasms2006@gmail.com"])
 
     response = client.fetch(messages, ['BODY[]'])
 
