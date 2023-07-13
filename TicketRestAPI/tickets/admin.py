@@ -110,10 +110,10 @@ class CustomUserAdmin(UserAdmin):
         return response
 
 class CustomTicketThreadAdmin(admin.ModelAdmin):
-    actions = ['Thread_Info', 'Body_Tickets']
+    actions = ['download_ticket_thread_pdf', 'body_ticket']
     list_display = ['thread_code']
 
-    def Thread_Info(self, request, queryset):
+    def download_ticket_thread_pdf(self, request, queryset):
         # Cria uma resposta HTTP para o arquivo PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="user_ticket_thread.pdf"'
@@ -160,7 +160,7 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
         doc.build(elements)  # Gera o PDF com os elementos
         return response
     
-    def Body_Tickets(self, request, queryset):
+    def body_ticket(self, request, queryset):
         # Cria uma resposta HTTP para o arquivo PDF
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="user_ticket_body.pdf"'
@@ -203,8 +203,7 @@ class CustomTicketThreadAdmin(admin.ModelAdmin):
         doc.build(elements)  # Gera o PDF com os elementos
         return response
 
-
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(TicketThread, CustomTicketThreadAdmin)
-admin.site.register([Ticket, Comment, Registro, Attachment])
+admin.site.register([Ticket, Comment, Registro])
