@@ -62,7 +62,8 @@ class Migration(migrations.Migration):
             name='Attachment',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('file', models.FileField(upload_to='uploads')),
+                ('hash', models.CharField(max_length=32)),
+                ('file', models.FileField(upload_to='uploads/')),
                 ('ticket', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attachments', to='tickets.ticket')),
             ],
         ),
